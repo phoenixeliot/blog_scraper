@@ -29,7 +29,35 @@ rules = {
   "He was already out of her" => "He was already out of his",
   "Swimging" => "Swinging",
   "an negative" => "a negative",
-  # /([^\.])\.\.([^\.])/ => '\1...\2',
+  "The C.U.l" => "The C.U.I.",
+  "the C.U. I" => "the C.U.I. I",
+  "C.U.I.." => "C.U.I.",
+  "Faulltine" => "Faultline",
+  "Matroyshka" => "Matryoshka",
+  "phone</p>" => "phone.</p>", 
+  /<br>\n?-c/ => "<br>&ndash;c",
+  "thirty-twenty five" => "thirty to twenty-five",
+  /”Listen/ => '“Listen',
+  /I[“”"]m/ => "I’m",
+  /I[“”"]ll/ => "I’ll",
+  "voice, I think" => "voice, “I think",
+  
+  # these ones are a little dangerous;
+  # don't rearrange their order
+  / ”<\/p>/ => '”</p>',
+  /“Yes, dear. ”/ => "“Yes, dear.”",
+  /(.{0,20}) ” ?(.{0,20})/ => '\1 “\2',
+  /(”[^“”]+)Not exactly.”/ => '\1“Not exactly.”',
+  '” Either of you?”' => ' Either of you?”',
+  /” I said. ([A-Z][^“”]+”)/ => '” I said. “\1',
+  /”([^“”<]+)”/ => '“\1”', # especially this one
+  
+  /”Noelle, “/ => '“Noelle,”',
+  /“([^“”<]+) (he gasped)+/ => '“\1” \2',
+  /fighting, “T/ => 'fighting,” T',
+  /“([^“”<]+)“/ => '“\1”', # especially this one
+      
+  # works in progress (don't leave these in as-is)
 }
 
 rules.each do |key, value|
