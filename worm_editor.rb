@@ -3,6 +3,15 @@ require 'byebug'
 text = File.read("worm.html")
 
 rules = {
+  '<p style="text-align:left;">' => '<p>',
+  /<span style="font-style:inherit;line-height:1.625;">(.*?)<\/span>/ => '\1',
+  /line-height:[\w.]+?;/ => '',
+  /text-align:(?!center).*?;/ => '',
+  /font-size:[\w.]+?;/ => '',
+  /font-style:[\w]+?;/ => '',
+  / style=""/ => '', 
+  / id="(?!chap\d+).*"/ => '',
+  /padding-left:30px;/ => 'padding-left:10%;',
   /-“/ => '-”',
   "<em>“</em>" => '“',
   /([^\d\w])-([^\d\w])/ => '\1&mdash;\2',
@@ -34,14 +43,18 @@ rules = {
   "C.U.I.." => "C.U.I.",
   "Faulltine" => "Faultline",
   "Matroyshka" => "Matryoshka",
-  "phone</p>" => "phone.</p>", 
+  "phone</p>" => "phone.</p>",
+  "doorway-turned window" => "doorway-turned-window",
+  "maybe now you can maybe" => "maybe now you can",
+  "an negative" => "a negative",
   /<br>\n?-c/ => "<br>&ndash;c",
   "thirty-twenty five" => "thirty to twenty-five",
   /”Listen/ => '“Listen',
   /I[“”"]m/ => "I’m",
   /I[“”"]ll/ => "I’ll",
   "voice, I think" => "voice, “I think",
-  
+  /‘([^‘′])*′/ => '‘\1’',
+
   # these ones are a little dangerous;
   # don't rearrange their order
   / ”<\/p>/ => '”</p>',
@@ -51,13 +64,16 @@ rules = {
   '” Either of you?”' => ' Either of you?”',
   /” I said. ([A-Z][^“”]+”)/ => '” I said. “\1',
   /”([^“”<]+)”/ => '“\1”', # especially this one
-  
+
   /”Noelle, “/ => '“Noelle,”',
   /“([^“”<]+) (he gasped)+/ => '“\1” \2',
   /fighting, “T/ => 'fighting,” T',
   /“([^“”<]+)“/ => '“\1”', # especially this one
-      
+
   # works in progress (don't leave these in as-is)
+  /(and the others are)\./ => '\1?',
+  /Rachel made sound/ => 'Rachel made a sound',
+  
 }
 
 rules.each do |key, value|
