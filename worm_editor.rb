@@ -1,6 +1,6 @@
 require 'byebug'
 
-text = File.read("worm.html")
+text = File.read("ward.html")
 
 rules = {
   '<p style="text-align:left;">' => '<p>',
@@ -94,6 +94,6 @@ rules.each do |key, value|
   puts
 end
 
-f = File.new("worm_edited.html", "w")
+f = File.new("ward_edited.html", "w")
 f.write(text)
 f.close

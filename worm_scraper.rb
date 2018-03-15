@@ -3,13 +3,14 @@ require 'open-uri'
 require 'uri'
 
 #set to first chapter
-@next_chapter = 'https://parahumans.wordpress.com/category/stories-arcs-1-10/arc-1-gestation/1-01/'
+@next_chapter = 'https://www.parahumans.net/2017/10/21/glow-worm-0-1/'
 @toc = "<h1>Table of Contents</h1>"
 @book_body = ""
 @index = 1
 
 while @next_chapter
   #check if url is weird
+  @next_chapter.sub!('http://', 'https://')
   if @next_chapter.to_s.include?("½")
     @next_chapter = URI.escape(@next_chapter)
   end
