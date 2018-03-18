@@ -1,9 +1,11 @@
 require 'nokogiri'
 require 'open-uri'
 require 'uri'
+require 'base64'
 
 #set to first chapter
-@next_chapter = 'https://www.parahumans.net/2017/10/21/glow-worm-0-1/'
+@next_chapter = 'https://sinceriously.fyi/inconceivable/'
+# @next_chapter = 'https://sinceriously.fyi/false-faces/'
 @toc = "<h1>Table of Contents</h1>"
 @book_body = ""
 @index = 1
@@ -32,12 +34,24 @@ while @next_chapter
   @toc << "<a href=\"#chap#{@index.to_s}\">#{@chapter_title_plain}</a><br>"
   @index += 1
   #next
-  @next_chapter = if doc.css('div.entry-content p a').last.content.to_s.include?("Next")
-                    doc.css('div.entry-content p a').last['href']
+  @next_chapter = if doc.css('div.nav-next a').last&.content.to_s.include?("Next")
+                    doc.css('div.nav-next a').last['href']
                   else
                     false
                   end
+  # @next_chapter = false #nocommit
 end
+
+@book_body.scan(/<img.*?src="(.*?)".*?>/).each_with_index { |match, i|
+  imgUrl = match[0]
+  # File.open("./sinceriously/#{i}.png", 'wb') { |fo|
+  #   fo.write(open(imgUrl).read)
+  # }
+  # @book_body.sub!(imgUrl, "#{i.to_s}.png")
+  
+  encoded = Base64.encode64(open(imgUrl).read)
+  @book_body.sub!(imgUrl, "data:image/png;base64,#{encoded}")
+}
 
 $stderr.puts "Writing Book..."
 
