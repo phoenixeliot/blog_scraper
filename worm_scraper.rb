@@ -27,7 +27,7 @@ while @next_chapter
   #clean
   @chapter_content.search('.//div').remove
   @to_remove = doc.css('div.entry-content p').first #gsub first p
-  @chapter_content = @chapter_content.to_s.gsub(@to_remove.to_s,"")
+  @chapter_content = @chapter_content.to_s#.gsub(@to_remove.to_s,"")
   #write
   @book_body << "<h1 id=\"chap#{@index.to_s}\">#{@chapter_title_plain}</h1>"
   @book_body << @chapter_content
