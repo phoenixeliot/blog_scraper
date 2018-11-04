@@ -52,6 +52,30 @@ class TOCManager:
                 link=link,
             ))
 
+    @classmethod
+    def from_html(self, html, source_url, reverse_order=False, keep_original_formatting=True):
+        soup = BeautifulSoup(html, 'html.parser')
+        element = soup.select(config['toc_selector'])[0]
+
+        links = list(map(
+            lambda tag: TOCLink(
+                text=tag.text,
+                href=tag.attrs['href'],
+                source_url=source_url,
+            ),
+            # TODO: put is_post_link in the right place
+            filter(is_post_link, element.find_all('a'))
+        ))
+        toc_manager = TOCManager(
+            element=element,
+            links=links,
+            reverse_order=reverse_order,
+            keep_original_formatting=keep_original_formatting
+        )
+        print('post_urls:', list(map(lambda l: l.href, links)))
+        return toc_manager
+
+
     def to_html(self):
         if self.keep_original_formatting:
             # TODO: Replace the links in toc_element with hashid links
@@ -67,11 +91,11 @@ class TOCManager:
 
 from uritools import urijoin
 class TOCLink:
-    def __init__(self, text='', href='', source=''):
+    def __init__(self, text='', href='', source_url=''):
         self.text = text
         self.original_href = href
-        self.source = source
-        self.href = urijoin(source, href)
+        self.source_url = source_url
+        self.href = urijoin(source_url, href)
 
     def to_html(self):
         return f'<a href="{self.href}">{self.text}</a>'
@@ -122,9 +146,6 @@ else:
     scraper = FetchScraper()
 expand_toc_js = config['toc_js']
 toc_html = scraper.scrape(config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
-# parse it
-toc_soup = BeautifulSoup(toc_html, 'html.parser')
-toc_element = toc_soup.select(config['toc_selector'])[0]
 
 # specific to parsing agentyduck TOC (and maybe other blogspots?)
 import re
@@ -138,14 +159,14 @@ def is_post_link(tag):
     return re.match(config['post_url_pattern'], tag.attrs['href']) is not None
 
 # Encapsulate the TOC links
-toc_links = list(map(lambda tag: TOCLink(text=tag.text, href=tag.attrs['href'], source=config['toc_url']), filter(is_post_link, toc_element.find_all('a'))))
-print('post_urls:', list(map(lambda l: l.href, toc_links)))
+# toc_links = list(map(lambda tag: TOCLink(text=tag.text, href=tag.attrs['href'], source_url=config['toc_url']), filter(is_post_link, toc_element.find_all('a'))))
+# print('post_urls:', list(map(lambda l: l.href, toc_links)))
 
-toc_manager = TOCManager(
-    element=toc_element,
-    links=toc_links,
+toc_manager = TOCManager.from_html(
+    html=toc_html,
+    source_url=config['toc_url'],
     reverse_order=bool(config['toc_reverse_order']),
-    keep_original_formatting=bool(config['toc_keep_original_formatting'])
+    keep_original_formatting=bool(config['toc_keep_original_formatting']),
 )
 
 
@@ -195,7 +216,7 @@ import operator
 book_assembler = BookAssembler(toc_manager=toc_manager, posts=posts)
 book_html = book_assembler.to_html()
 print(book_html)
-book_file = open('book_output.html', 'w')
+book_file = open(os.path.join(os.path.dirname(__file__), '../output', 'book_output.html'), 'w')
 book_file.write(book_html)
 
 
