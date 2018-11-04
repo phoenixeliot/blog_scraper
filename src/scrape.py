@@ -46,12 +46,10 @@ class TOCManager:
         self.links = list(links)
         self.toc_entries = []
         for (chapter_index, link) in enumerate(self.links):
-            unique_hashid = 'chap' + str(chapter_index + 1)
-            self.toc_entries.append(dict(
-                unique_hashid=unique_hashid,
-                link=link,
-            ))
+            unique_hash_id = 'chap' + str(chapter_index + 1)
+            self.toc_entries.append(TOCHashedLink(link=link, hash_id=unique_hash_id))
 
+    # TODO: Is this the right place to abstract this to? Or should parsing be separate from management?
     @classmethod
     def from_html(self, html, source_url, reverse_order=False, keep_original_formatting=True):
         soup = BeautifulSoup(html, 'html.parser')
@@ -75,18 +73,14 @@ class TOCManager:
         print('post_urls:', list(map(lambda l: l.href, links)))
         return toc_manager
 
-
     def to_html(self):
         if self.keep_original_formatting:
-            # TODO: Replace the links in toc_element with hashid links
+            # TODO: Replace the links in toc_element with hash_id links
             return self.toc_element.prettify()
         else:
-            # TODO: Get the hashid link versions (here or in TOCLink)
-            link_htmls = map(lambda l: l.to_html(), self.links)
+            link_htmls = map(lambda l: l.to_html(), self.toc_entries)
             toc_header = '<h1>Table of Contents</h1>'
             return toc_header + '<br>\n'.join(link_htmls)
-
-
 
 
 from uritools import urijoin
@@ -116,6 +110,27 @@ class BlogPost:
         post = reduce(operator.add, map(lambda soup: soup.prettify(), self.post_soups))
         return title + post
 
+
+# TODO: Merge/generalize with TOCLink
+class ContentLink:
+    def __init__(self, text='', href='', source_url=''):
+        self.text = text
+        self.original_href = href
+        self.source_url = source_url
+        self.href = urijoin(source_url, href)
+
+    def to_html(self):
+        return f'<a href="{self.href}">{self.text}</a>'
+
+
+# TODO maybe rename to TOCLocalizedLink or TOCInternalLink or TOCUniqueLink or sth
+class TOCHashedLink:
+    def __init__(self, link, hash_id):
+        self.link = link
+        self.hash_id = hash_id
+
+    def to_html(self):
+        return f'<a href="#{self.hash_id}">{self.link.text}</a>'
 
 
 import yaml
@@ -192,6 +207,28 @@ class BookAssembler():
 
     def to_html(self):
         toc_html = self.toc_manager.to_html()
+
+        hashed_links_by_url = {}
+        for hashed_link in self.toc_manager.toc_entries:
+            hashed_links_by_url[hashed_link.link.href] = hashed_link.hash_id
+
+        for post in self.posts:
+            # there will usually be 1 post_soup per post, but the post content *can* be split across multiple elements
+            for post_soup in post.post_soups:
+                content_link_tags = post.post_soups[0].select('a')
+
+                content_links = map(
+                    lambda tag: ContentLink(text=tag.text, href=tag.attrs['href'], source_url=post.url),
+                    content_link_tags
+                )
+                for content_link_tag in content_link_tags:
+                    if content_link_tag.attrs['href'] not in hashed_links_by_url:
+                        continue
+                    href = content_link_tag.attrs['href']
+                    # TODO: The Link objects I use aren't actually that useful here. Refactor them to make sense for this.
+                    content_link_tag.attrs['href'] = '#' + hashed_links_by_url[href]
+                    print(f"Replacing link from {href} to {hashed_links_by_url[href]}")
+
         posts_html = reduce(operator.add, map(lambda p: p.to_html(), self.posts))
         body = toc_html + posts_html
         # return body
@@ -215,18 +252,18 @@ import operator
 ## Assemble the TOC and BlogPosts into output html
 book_assembler = BookAssembler(toc_manager=toc_manager, posts=posts)
 book_html = book_assembler.to_html()
-print(book_html)
+# print(book_html)
 book_file = open(os.path.join(os.path.dirname(__file__), '../output', 'book_output.html'), 'w')
 book_file.write(book_html)
 
 
 ## Assemble the TOC object and start processing interlinks
 # Start with list of TOC links
-# Give each TOC link a unique hashid (#chap1, etc)
+# Give each TOC link a unique hash_id (#chap1, etc)
 # Process each page for links they have, store them in the BlogPost I guess
-# Process each page for hashids, store them in BlogPost
+# Process each page for hash_ids, store them in BlogPost
 # Figure out which of the page links match up with TOC links
-#   At some point, replace the hrefs in the page content with uniqued hashids
+#   At some point, replace the hrefs in the page content with uniqued hash_ids
 
 
 
