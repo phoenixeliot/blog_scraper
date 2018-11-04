@@ -1,0 +1,9 @@
+crawl_mode: 'toc'
+toc_url: 'https://sinceriously.fyi/'
+toc_selector: '#recent-posts-2'
+toc_reverse_order: true
+toc_keep_original_formatting: false
+post_title_selector: '.entry-title'
+post_body_selector: '.entry-content'
+#post_url_pattern:
+scrape_images: false

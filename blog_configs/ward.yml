@@ -1,0 +1,6 @@
+crawl_mode: 'toc'
+toc_url: 'https://www.parahumans.net/table-of-contents/'
+toc_keep_original_formatting: true
+toc_selector: '.entry-content'
+post_url_pattern: '.*/\d+/\d+/\d+/.+'
+scrape_images: false

@@ -1,0 +1,109 @@
+architecture for generalized scraper
+
+some things that vary from site to site:
+- how to locate the post content (what selectors to use)
+- maybe there's some stuff to exclude ("tweet this" buttons, etc)
+- is there an index, or just next/previous buttons?
+- domain name
+- url scheme
+
+ideal version would have visual UI (like with a chrome extension) for selecting what to include/exclude,
+and how to find index links, rather than typing out selectors (not very user-friendly)
+
+save separate configs for each blog that can be run separately
+
+preview html output before converting to epub
+
+replacing interlinks — needs much better link awareness (eg relative, absolute, checking domain, has a hash). In a chrome extension I could use native URL objects, I think. Maybe python has something like this?
+
+## Link stuff
+- scan document for all links
+  - immediately convert them into fully verbose links (domain and absolute path, not relative, not just a path)
+- scan document for all ids
+  - internal links might point to these ids
+  - need to stay paired with the path of the page they're on
+- if a link points to an internal hash/id, the result will need that replaced with a unique hash only (eg /chap4#subsection -> "chap4_subsection")
+- if a link points to an internal page, with no has, the result will need to be a unique hash to that page (eg "chap4")
+- "scan the document for links" should happen on each page scrape, or at least keep the pages stored separately before concatenating them all together, with URL information and stuff
+
+
+
+## clearly separate tasks (to maybe put in separate files/classes/whatever)
+- Read the config for the blog we're scraping
+- manage modes [TOC] vs [Incremental (clicking 'next')]
+- TOC mode
+  - scrape the TOC
+  - parse the TOC into an object to iterate over
+  - scrape the pages from the TOC
+- Incremental mode
+  - scrape the first page
+  - get the link to the next page (in addition to other processing?)
+  - scrape the next page, continue until done
+- Process a page for links, including internal hashed links
+  - Keep a central set of links, and the pages they're from
+- Process a page for referenced images [optional, eg on first runs. Maybe cache the images between runs..?]
+  - scrape the images, save them somewhere central
+- Post-processing
+  - Isolate the content we care about (include/exclude certain selectors)
+  - Give internal links unique hash IDs
+  - Replace IDs in the document to match
+  - Replace hrefs in the document to match
+  - Replace converted images with their base64 data
+- Write out the content to a file
+
+
+## Architecture/flow:
+Entry: main
+- reads config, CLI arguments
+- picks appropriate mode to run
+- runs that mode, takes its output
+- feeds output into file-writing code
+
+manager for TOC mode
+- use the config's TOC location to scrape that page
+- process TOC page for links using link-extractor
+- queue up individual page scrape jobs based on TOC links
+- for each page scrape, do full link extraction
+  - also queue up image scrapes/extractions
+- once all pages are scraped and processed, feed content into post-processing
+
+manager for Incremental mode
+- use the config's first page location to scrape that page
+- process that page for the next page link using link-extractor
+  - also, separately, do full link extraction from this page
+  - (convert this page into an easy to access object _once_)
+- scrape the next page, process it like the last
+- once there are no more next pages, and no more processing jobs to do, feed content into post-processing
+
+link extractor
+-? where do I convert the scraped page into a navigable DOM-like object? If in JS, it's just like that already.
+- find all the <a> tags in the page, extract their hrefs
+- extracted link object:
+  - properties:
+    - page it was extracted from
+    - full path it points to, including hash
+  -? where do I mark whether it seems to be pointing internally? in the extractor, or elsewhere?
+  - kinds of links
+    - hash links within the same chapter/page
+    - hash links to other pages on the blog
+    - non-hash links to other pages on the blog
+    - links to the outside
+    - javascript links (ignore these?? eg toggle archive)
+
+page scraper
+- given a URL, downloads the content.
+- returns a parsed DOM thing? TODO: figure out appropriate python libraries for this
+- two modes: urllib, chromedriver
+  - with chromedriver, don't necessarily know when the page is done.
+    maybe have a thing we're looking for, and wait for that to exist/have content?
+
+image scraper
+- given a URL, downloads the content.
+- returns a base64 encoded image?
+
+
+
+## Things not yet handled
+- hosting specific modes
+- TOC has links to eg "all posts in october" to ignore (I think blogspot does this? or maybe just agenty duck)
+- Embed the original TOC text with the links updated (so you get stuff like Ward's description of the prologue)

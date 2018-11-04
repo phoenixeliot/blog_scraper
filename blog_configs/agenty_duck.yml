@@ -1,0 +1,8 @@
+scraper_engine: 'selenium'
+crawl_mode: 'toc'
+toc_url: 'http://agentyduck.blogspot.com'
+toc_keep_original_formatting: false
+toc_selector: '#BlogArchive1'
+toc_js: '$("#BlogArchive1 .collapsed .toggle").click()'
+post_url_pattern: '.*/\d+/\d+/.*.html'
+scrape_images: false
