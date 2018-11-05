@@ -1,27 +1,21 @@
-import yaml
+import multiprocessing
 import os
-from collections import defaultdict
-
 from src.blog_post import BlogPost
 from src.book_assembler import BookAssembler
+from src.read_config import read_config
 from src.scrapers import SeleniumScraper, FetchScraper
 from src.toc_manager import TOCManager
+import argparse
 
 import timeit
 
 
-def read_config(filename):
-    path = os.path.join(os.path.dirname(__file__), '../blog_configs', filename)
-    config = defaultdict(lambda: None, yaml.load(open(path)))
-    return config
-
-
 ## Parse command line arguments to fetch the config data
-import argparse
 argParser = argparse.ArgumentParser(description='Process CLI arguments')
 argParser.add_argument('config_filename', metavar='config file name', type=str,
                        help="Name of the .yml config file for the blog you're scraping")
 args = argParser.parse_args()
+
 config = read_config(args.config_filename)
 
 
@@ -51,7 +45,6 @@ toc_manager = TOCManager.from_html(
 
 
 # Scrape the TOC links and encapsulate them as BlogPosts
-import multiprocessing
 
 
 def multi_scrape_html(link):

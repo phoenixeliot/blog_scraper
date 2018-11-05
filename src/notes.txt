@@ -103,6 +103,34 @@ image scraper
 
 
 
+## Sketching more centralized link replacement
+- TOC links get swapped with #chap1 etc
+- in-page links get swapped with #chap3_someid
+- links from other pages get swapped with #chap3_someid
+
+TOC and all pages need to extract all links (paired with source_urls), and feed them into a central link LUT
+- map from [full URL with hash] to [hash_id for new link]
+- hash_id depends on previous hash and chapter the linked section is part of (chapter could be inferrable URl's path)
+
+Then we need to replace every link's href, and update id's for preexisting id'd tags, and add ids to chapter starts
+- store every link in a list, then iterate over it and edit the tag
+-- the multicore scraper thing(?) doesn't like putting tags on my Link objects
+-- do I even need my custom link objects?? probably not
+- for each TOC link
+-- update the href to point to the chapter hash_id
+- for each content link
+-- update the href to point to the chapter hash_id, or subsection hash_id
+
+Every [chapter, linked id'd tag] will need a hash_id
+- chapters get #chapN
+- linked id'd tags get #chapN_thingy
+-- this requires keeping context for which chapter they're part of. we could just not.
+- need to make all of these unique
+-- could just keep a global incrementing ID but that's not very Clean
+
+
+
+
 ## Things not yet handled
 - hosting-specific modes (eg blogspot has weird archive-by-month/year stuff)
 - TOC has links to eg "all posts in october" to ignore (I think blogspot does this? or maybe just agenty duck)
@@ -114,7 +142,6 @@ image scraper
 - Could support python config files, which would allow providing a cleanup function inside the config, for site-specific cleanup
 
 
-total parse time of Ward using SoupStrainer on debug: 294.1s
 
 
 dependencies:

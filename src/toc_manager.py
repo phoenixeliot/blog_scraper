@@ -56,7 +56,6 @@ class TOCManager:
 
     def to_html(self):
         if self.keep_original_formatting:
-            # TODO: Replace the links in toc_element with hash_id links
             for tag in self.toc_element.select('a[href]'):
                 if tag.attrs['href'] not in self.url_link_map:
                     print("Couldn't localize original TOC link:", tag.attrs['href'])
