@@ -107,3 +107,4 @@ image scraper
 - hosting specific modes
 - TOC has links to eg "all posts in october" to ignore (I think blogspot does this? or maybe just agenty duck)
 - Embed the original TOC text with the links updated (so you get stuff like Ward's description of the prologue)
+- Embed footnote-like things for external links, so you can see that it's external and what the URL is before opening it
