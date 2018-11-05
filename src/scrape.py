@@ -71,7 +71,7 @@ posts = list(map(
 ## Assemble the TOC and BlogPosts into output html
 book_assembler = BookAssembler(toc_manager=toc_manager, posts=posts)
 book_html = book_assembler.to_html()
-book_file = open(os.path.join(os.path.dirname(__file__), '../output', 'book_output.html'), 'w')
+book_file = open(os.path.join(os.path.dirname(__file__), '../tmp', 'book_output.html'), 'w')
 book_file.write(book_html)
 
 
