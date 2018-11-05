@@ -27,8 +27,10 @@ config = read_config(args.config_filename)
 # scrape it
 if config['scraper_engine'] == 'selenium':
     scraper = SeleniumScraper()
+    max_threads = 1
 else:
     scraper = FetchScraper()
+    max_threads = 10
 expand_toc_js = config['toc_js']
 toc_html = scraper.scrape(config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
 
@@ -55,7 +57,7 @@ def multi_scrape_html(link):
     return dict(link=link, html=html)
 
 
-with multiprocessing.Pool(min(len(toc_manager.links), 10)) as thread_pool:
+with multiprocessing.Pool(min(len(toc_manager.links), max_threads)) as thread_pool:
     scraped_links = thread_pool.map(multi_scrape_html, toc_manager.links)
 
 posts = list(map(
@@ -64,6 +66,7 @@ posts = list(map(
         html=pair['html'],
         post_title_selector=config['post_title_selector'],
         post_body_selector=config['post_body_selector'],
+        blacklist_selector=config['blacklist_selector'],
     ),
     scraped_links
 ))

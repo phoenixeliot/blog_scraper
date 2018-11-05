@@ -1,0 +1,12 @@
+# This file won't work, it just includes all the flags you can use
+
+crawl_mode: 'toc' # or 'incremental'
+scraper_engine: 'selenium' # or omit this setting
+toc_url: 'https://www.parahumans.net/table-of-contents/'
+toc_keep_original_formatting: true # Set to false to regenerate the TOC based on the links
+toc_selector: '.entry-content'
+post_url_pattern: '.*/\d+/\d+/\d+/.+' # omit if all links in the TOC are valid post links
+post_title_selector: '.entry-title' # element that contains the title
+post_body_selector: '.entry-content' # element that contains the post content
+scrape_images: false # leave off for dry runs. Downloads and embeds the image into the page.
+blacklist_selector: '.sharedaddy'

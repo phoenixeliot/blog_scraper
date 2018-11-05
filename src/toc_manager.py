@@ -23,9 +23,12 @@ class TOCManager:
         if DEBUG:
             self.links = self.links[0:5]
         self.toc_entries = []
+        self.url_link_map = {}
         for (chapter_index, link) in enumerate(self.links):
             unique_hash_id = 'chap' + str(chapter_index + 1)
-            self.toc_entries.append(TOCHashedLink(link=link, hash_id=unique_hash_id))
+            hashed_link = TOCHashedLink(link=link, hash_id=unique_hash_id)
+            self.toc_entries.append(hashed_link)
+            self.url_link_map[link.href] = hashed_link
 
     # TODO: Is this the right place to abstract this to? Or should parsing be separate from management?
     @classmethod
@@ -54,6 +57,12 @@ class TOCManager:
     def to_html(self):
         if self.keep_original_formatting:
             # TODO: Replace the links in toc_element with hash_id links
+            for tag in self.toc_element.select('a[href]'):
+                if tag.attrs['href'] not in self.url_link_map:
+                    print("Couldn't localize original TOC link:", tag.attrs['href'])
+                    continue
+                link = self.url_link_map[tag.attrs['href']]
+                tag.attrs['href'] = '#' + link.hash_id  # TODO: code smell, assembling link stuff outside of links
             return self.toc_element.prettify()
         else:
             link_htmls = map(lambda l: l.to_html(), self.toc_entries)
