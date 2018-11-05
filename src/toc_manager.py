@@ -63,7 +63,7 @@ class TOCManager:
                     continue
                 link = self.url_link_map[tag.attrs['href']]
                 tag.attrs['href'] = '#' + link.hash_id  # TODO: code smell, assembling link stuff outside of links
-            return self.toc_element.prettify()
+            return str(self.toc_element)
         else:
             link_htmls = map(lambda l: l.to_html(), self.toc_entries)
             toc_header = '<h1>Table of Contents</h1>'

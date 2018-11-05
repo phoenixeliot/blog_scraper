@@ -8,3 +8,7 @@ post_title_selector: '.entry-title'
 post_body_selector: '.entry-content'
 scrape_images: false
 blacklist_selector: '.sharedaddy'
+blacklist_texts:
+  - 'Next Chapter'
+  - 'Last Chapter'
+  - 'Previous Chapter' # Yes, it uses both, hah

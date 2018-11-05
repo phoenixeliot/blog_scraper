@@ -7,6 +7,8 @@ from src.book_assembler import BookAssembler
 from src.scrapers import SeleniumScraper, FetchScraper
 from src.toc_manager import TOCManager
 
+import timeit
+
 
 def read_config(filename):
     path = os.path.join(os.path.dirname(__file__), '../blog_configs', filename)
@@ -60,6 +62,8 @@ def multi_scrape_html(link):
 with multiprocessing.Pool(min(len(toc_manager.links), max_threads)) as thread_pool:
     scraped_links = thread_pool.map(multi_scrape_html, toc_manager.links)
 
+start_time = timeit.default_timer()
+
 posts = list(map(
     lambda pair: BlogPost(
         url=pair['link'].href,
@@ -67,6 +71,7 @@ posts = list(map(
         post_title_selector=config['post_title_selector'],
         post_body_selector=config['post_body_selector'],
         blacklist_selector=config['blacklist_selector'],
+        blacklist_texts=config['blacklist_texts'],
     ),
     scraped_links
 ))
@@ -88,5 +93,5 @@ book_file.write(book_html)
 
 
 
-
-print('Done.')
+elapsed = timeit.default_timer() - start_time
+print('Done in %0.1f seconds' % (elapsed))
