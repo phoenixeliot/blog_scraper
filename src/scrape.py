@@ -97,7 +97,7 @@ def url_is_included(url):
     return uritools.uridefrag(url).uri in included_scraped_urls
 
 def mark_url_included(url):
-    included_scraped_urls.add(get_redirect(uritools.uridefrag(url).uri))
+    included_scraped_urls.add(uritools.uridefrag(url).uri)
 
 # list of link tags in the TOC
 # eg dict(source_url=..., href=...)
@@ -283,7 +283,7 @@ if config['scraped_linked_local_pages']:
                     print("Scraping extra:")
                     scrape_result = scraper.scrape(full_href, wait_for_selector=config['post_body_selector'])
                     redirects[full_href] = scrape_result['final_url']
-                    mark_url_included(full_href)
+                    mark_url_included(scrape_result['final_url'])
 
                     extra_page = parse_post(scrape_result['html'])
                     extra_page['final_url'] = scrape_result['final_url']
@@ -297,7 +297,6 @@ if config['scraped_linked_local_pages']:
 """
 grant ids to each post via their title element
 """
-# TODO: Maybe grant differently named ids to extra linked posts?
 for post in posts:
     print(post['title_soup'])
     post['title_soup']['id'] = final_url_to_id[post['final_url']]
