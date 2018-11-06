@@ -371,16 +371,11 @@ if config['scrape_images']:
             response=scraper_results['response'],
         )
 
-    # with multiprocessing.Pool(min(len(toc_links), max_threads)) as thread_pool:
-    #     scraped_toc_links = thread_pool.map(
-    #         multi_scrape_image,
-    #         map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links)
-    #     )
-
-    scraped_images = list(map(
-        multi_scrape_image,
-        images_by_src.keys()
-    ))
+    with multiprocessing.Pool(min(len(images_by_src), max_threads)) as thread_pool:
+        scraped_images = thread_pool.map(
+            multi_scrape_image,
+            images_by_src.keys(),
+        )
 
     # Record the TOC pages into included_scraped_urls
     for scraped_image in scraped_images:
