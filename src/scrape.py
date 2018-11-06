@@ -1,7 +1,9 @@
+import base64
 import multiprocessing
 import os
 import re
 import urllib.error
+from collections import defaultdict
 
 import uritools
 from bs4 import BeautifulSoup
@@ -351,15 +353,52 @@ if config['external_link_symbol']:
             print(f"Marking link as external: {final_url}")
             element.string += config['external_link_symbol']
 
-"""
-Update image src's to be full URLs
-"""
 
-for (post, element) in post_select_iter('[src]'):
-    full_src = uritools.urijoin(post['final_url'], element['src'])
-    if element['src'] != full_src:
-        print(f"Updating image src from {element['src']} to {full_src}")
-        element['src'] = full_src
+if config['scrape_images']:
+    """
+    Scrape external images and replace their src's with base64 encoded versions
+    """
+    images_by_src = defaultdict(lambda: [])
+    for (post, element) in post_select_iter('[src]'):
+        full_src = uritools.urijoin(post['final_url'], element['src'])
+        images_by_src[full_src].append(element)
+
+    def multi_scrape_image(src):
+        scraper_results = scraper.scrape(src, wait_for_selector=config['post_body_selector'])
+        return dict(
+            src=src,
+            data=scraper_results['html'],
+            response=scraper_results['response'],
+        )
+
+    # with multiprocessing.Pool(min(len(toc_links), max_threads)) as thread_pool:
+    #     scraped_toc_links = thread_pool.map(
+    #         multi_scrape_image,
+    #         map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links)
+    #     )
+
+    scraped_images = list(map(
+        multi_scrape_image,
+        images_by_src.keys()
+    ))
+
+    # Record the TOC pages into included_scraped_urls
+    for scraped_image in scraped_images:
+        for image_tag in images_by_src[scraped_image['src']]:
+            content_type = dict(scraped_image['response'].headers._headers)['Content-Type']
+            base64_image = base64.b64encode(scraped_image['data']).decode('ascii')
+            print(f"Inlining an image as base64: {image_tag['src']}")
+            image_tag['src'] = f"data:{content_type};base64,{base64_image}"
+
+else:
+    """
+    Update image src's to be full URLs
+    """
+    for (post, element) in post_select_iter('[src]'):
+        full_src = uritools.urijoin(post['final_url'], element['src'])
+        if element['src'] != full_src:
+            print(f"Updating image src from {element['src']} to {full_src}")
+            element['src'] = full_src
 
 """
 Assemble the output html

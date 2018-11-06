@@ -11,6 +11,7 @@ class FetchScraper():
             return dict(
                 html=html,
                 final_url=response.url,  # TODO: test this on any site that has redirects
+                response=response,
             )
         except urllib.error.HTTPError as e:
             print("Couldn't scrape URL " + url, e)
@@ -48,4 +49,5 @@ class SeleniumScraper():
         return dict(
             html=html,
             final_url=self.driver.current_url,
+            # response=response,  # TODO: Figure out how to implement content-type stuff for images with Selenium below
         )
