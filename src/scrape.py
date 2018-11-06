@@ -246,7 +246,7 @@ replace post subsection ids to new unique ids
 for post in posts:
     for body_soup in post['body_soups']:
         for element in body_soup.select('[id]'):
-            chap_id = '#chap' + str(final_url_to_chapter_number[post['final_url']])
+            chap_id = 'chap' + str(final_url_to_chapter_number[post['final_url']])
             element['id'] = chap_id + '_' + element['id']
 # TODO: This doesn't create a mapping and instead just changes it in place. Could this be cleaner?
 
@@ -273,9 +273,14 @@ for post in posts:
                 chap_id = '#chap' + str(final_url_to_chapter_number[final_defrag_url])
                 if subsection_id:
                     final_href = chap_id + '_' + subsection_id
+                    print(f"Replacing an internal subsection link: {post['final_url']} {final_href}")
                 else:
                     final_href = chap_id
+                    print(f"Replacing an internal chapter link: {post['final_url']} {final_href}")
                 element['href'] = final_href
+            elif config['external_link_symbol']:
+                # If it's not an internal link, add a symbol to the text
+                element.string += config['external_link_symbol']
 
 """
 Assemble the output html
@@ -292,6 +297,17 @@ for post in posts:
     for body_soup in post['body_soups']:
         book_html += str(body_soup)
 
+book_html = f"""
+<html lang="en-US">
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <body>
+        {book_html}
+    </body>
+</html>
+"""
+
 """
 Write out the file
 """
@@ -299,47 +315,4 @@ Write out the file
 book_file = open(os.path.join(os.path.dirname(__file__), '../tmp', 'book_output.html'), 'w')
 book_file.write(book_html)
 
-### old code below for picking out bits and pieces
-
-exit()
-## Scrape and process the TOC
-# scrape it
-
-# Encapsulate the TOC links
-# toc_links = list(map(lambda tag: TOCLink(text=tag.text, href=tag.attrs['href'], source_url=config['toc_url']), filter(is_post_link, toc_element.find_all('a'))))
-# print('post_urls:', list(map(lambda l: l.href, toc_links)))
-
-toc_manager = TOCManager.from_html(
-    html=toc_html,
-    source_url=config['toc_url'],
-    toc_selector=config['toc_selector'],
-    post_url_pattern=config['post_url_pattern'],
-    reverse_order=bool(config['toc_reverse_order']),
-    keep_original_formatting=bool(config['toc_keep_original_formatting']),
-)
-
-
-# Scrape the TOC links and encapsulate them as BlogPosts
-
-
-
-
-## Assemble the TOC and BlogPosts into output html
-book_assembler = BookAssembler(toc_manager=toc_manager, posts=posts)
-book_html = book_assembler.to_html()
-book_file = open(os.path.join(os.path.dirname(__file__), '../tmp', 'book_output.html'), 'w')
-book_file.write(book_html)
-
-
-## Assemble the TOC object and start processing interlinks
-# Start with list of TOC links
-# Give each TOC link a unique hash_id (#chap1, etc)
-# Process each page for links they have, store them in the BlogPost I guess
-# Process each page for hash_ids, store them in BlogPost
-# Figure out which of the page links match up with TOC links
-#   At some point, replace the hrefs in the page content with uniqued hash_ids
-
-
-
-elapsed = timeit.default_timer() - start_time
-print('Done in %0.1f seconds' % (elapsed))
+print("Done.")

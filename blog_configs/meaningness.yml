@@ -5,3 +5,4 @@ toc_keep_original_formatting: true
 post_title_selector: '#page-title'
 post_body_selector: '.node-content'
 scrape_images: false
+external_link_symbol: '↗︎︎'
