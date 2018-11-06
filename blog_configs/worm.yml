@@ -1,0 +1,13 @@
+crawl_mode: 'incremental'
+scraper_engine: 'selenium' # or nothing
+first_post_url: 'https://parahumans.wordpress.com/2011/06/11/1-1/'
+post_url_pattern: '.*/\d+/\d+/\d+/.+'
+post_title_selector: '.entry-title'
+post_body_selector: '.entry-content'
+scrape_images: true
+blacklist_selector: '.sharedaddy'
+external_link_symbol: '↗︎︎'
+blacklist_texts:
+  - 'Next Chapter'
+  - 'Last Chapter'
+  - 'Previous Chapter' # Yes, it uses both, hah

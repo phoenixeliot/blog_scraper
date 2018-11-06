@@ -136,126 +136,133 @@ if config['scraper_engine'] == 'selenium':
 else:
     scraper = FetchScraper()
 
-"""
-Scrape the TOC
-Extract its links and put them in the Pile O' Links
-"""
+if config['crawl_mode'] == 'toc':
+    """
+    Scrape the TOC
+    Extract its links and put them in the Pile O' Links
+    """
 
-expand_toc_js = config['toc_js']
-print(f"Scraping table of contents: {config['toc_url']}")
-toc_scrape_result = scraper.scrape(config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
+    expand_toc_js = config['toc_js']
+    print(f"Scraping table of contents: {config['toc_url']}")
+    toc_scrape_result = scraper.scrape(config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
 
-# Record the scrape results in included_scraped_urls and redirects
-included_scraped_urls.add(uritools.uridefrag(toc_scrape_result['final_url']).uri)
-redirects[config['toc_url']] = toc_scrape_result['final_url']
+    # Record the scrape results in included_scraped_urls and redirects
+    included_scraped_urls.add(uritools.uridefrag(toc_scrape_result['final_url']).uri)
+    redirects[config['toc_url']] = toc_scrape_result['final_url']
 
-soup = BeautifulSoup(toc_scrape_result['html'], 'html.parser')
-toc_element = soup.select(config['toc_selector'])[0]
+    soup = BeautifulSoup(toc_scrape_result['html'], 'html.parser')
+    toc_element = soup.select(config['toc_selector'])[0]
 
-def is_post_link(tag, post_url_pattern=None):
-    if tag.attrs['href'] is None:
-        return False
-    if tag.attrs['href'].startswith('javascript:'):
-        return False
-    if post_url_pattern is None:  # Not filtering TOC links at all
-        return True
-    return re.match(post_url_pattern, tag.attrs['href']) is not None
+    def is_post_link(tag, post_url_pattern=None):
+        if tag.attrs['href'] is None:
+            return False
+        if tag.attrs['href'].startswith('javascript:'):
+            return False
+        if post_url_pattern is None:  # Not filtering TOC links at all
+            return True
+        return re.match(post_url_pattern, tag.attrs['href']) is not None
 
-toc_links = list(map(
-    lambda tag: dict(
-        tag=tag,
-        source_url=config['toc_url'],
-    ),
-    filter(lambda l: is_post_link(l, config['post_url_pattern']), toc_element.select('a[href]'))
-))
-
-if config['reverse_order']:
-    toc_links = reversed(toc_links)
-
-DEBUG = False
-DEBUG_POST_LIMIT = 5
-if DEBUG:
-    toc_links = toc_links[:DEBUG_POST_LIMIT]
-
-"""
-Give an ID to the TOC itself
-"""
-toc_element['id'] = 'toc'
-
-"""
-Scrape all the pages that the TOC links to (using multithreading, yay!)
-"""
-
-if config['scraper_engine'] == 'selenium':
-    max_threads = 1
-else:
-    max_threads = 10
-
-def multi_scrape_html(href):
-    try:
-        print(f"Scraping post: {href}")
-        scraper_results = scraper.scrape(href, wait_for_selector=config['post_body_selector'])
-        return dict(
-            href=href,
-            html=scraper_results['html'],
-            final_url=scraper_results['final_url'],
-        )
-    except urllib.error.HTTPError:  # TODO: Do something analogous for Selenium. Probably in several places.
-        return None
-with multiprocessing.Pool(min(len(toc_links), max_threads)) as thread_pool:
-    scraped_toc_links = list(filter(
-        lambda x: x is not None,
-        thread_pool.map(multi_scrape_html, map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
+    toc_links = list(map(
+        lambda tag: dict(
+            tag=tag,
+            source_url=config['toc_url'],
+        ),
+        filter(lambda l: is_post_link(l, config['post_url_pattern']), toc_element.select('a[href]'))
     ))
 
-# Record the TOC pages into included_scraped_urls
-for link in scraped_toc_links:
-    mark_url_included(link['final_url'])
+    if config['reverse_order']:
+        toc_links = reversed(toc_links)
 
-"""
-for each scraped_link, add [href -> final_url] to the pile o' redirects
-"""
-for link in scraped_toc_links:
-    if link['href'] != link['final_url']:
-        print(f"Redirected from {link['href']} to {link['final_url']}")
-    redirects[link['href']] = link['final_url']
+    DEBUG = False
+    DEBUG_POST_LIMIT = 10
+    if DEBUG:
+        toc_links = toc_links[:DEBUG_POST_LIMIT]
 
-"""
-map the final urls to chapter numbers
-"""
-final_url_to_chapter_number = {}
-final_url_to_id = {}
-for (chapter_index, link) in enumerate(scraped_toc_links):
-    final_url_to_chapter_number[link['final_url']] = chapter_index + 1
-    final_url_to_id[link['final_url']] = 'chap' + str(chapter_index + 1)
+    """
+    Give an ID to the TOC itself
+    """
+    toc_element['id'] = 'toc'
 
-# TODO: Flesh this out to handle all the cases
-def final_url_to_hash_id(url):
-    if url == config['toc_url']:
-        return toc_element['id']
-    return # TODO chapter ids, subsection ids
+    """
+    Scrape all the pages that the TOC links to (using multithreading, yay!)
+    """
 
-"""
-assemble the posts (with metadata)
-eg dict(final_url=..., title_soup=..., body_soups=)
+    if config['scraper_engine'] == 'selenium':
+        max_threads = 1
+    else:
+        max_threads = 10
 
-for each scraped link, parse its content and extract the title/body
-"""
-def parse_post(html):
-    page_soup = BeautifulSoup(html, 'html.parser')
-    title_soup = page_soup.select(config['post_title_selector'])[0]
-    body_soups = page_soup.select(config['post_body_selector'])
-    return dict(
-        title_soup=title_soup,
-        body_soups=body_soups,
-    )
+    def multi_scrape_html(href):
+        try:
+            print(f"Scraping post: {href}")
+            scraper_results = scraper.scrape(href, wait_for_selector=config['post_body_selector'])
+            return dict(
+                href=href,
+                html=scraper_results['html'],
+                final_url=scraper_results['final_url'],
+            )
+        except urllib.error.HTTPError:  # TODO: Do something analogous for Selenium. Probably in several places.
+            return None
+    with multiprocessing.Pool(min(len(toc_links), max_threads)) as thread_pool:
+        scraped_toc_links = list(filter(
+            lambda x: x is not None,
+            thread_pool.map(multi_scrape_html, map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
+        ))
 
-posts = []
-for link in scraped_toc_links:
-    print(f"Parsing post: {link['final_url']}")
-    parsed_post = parse_post(link['html'])
-    parsed_post['final_url'] = link['final_url']
-    posts.append(parsed_post)
+    # Record the TOC pages into included_scraped_urls
+    for link in scraped_toc_links:
+        mark_url_included(link['final_url'])
+
+    """
+    for each scraped_link, add [href -> final_url] to the pile o' redirects
+    """
+    for link in scraped_toc_links:
+        if link['href'] != link['final_url']:
+            print(f"Redirected from {link['href']} to {link['final_url']}")
+        redirects[link['href']] = link['final_url']
+
+    """
+    map the final urls to chapter numbers
+    """
+    final_url_to_chapter_number = {}
+    final_url_to_id = {}
+    for (chapter_index, link) in enumerate(scraped_toc_links):
+        final_url_to_chapter_number[link['final_url']] = chapter_index + 1
+        final_url_to_id[link['final_url']] = 'chap' + str(chapter_index + 1)
+
+    # TODO: Flesh this out to handle all the cases
+    def final_url_to_hash_id(url):
+        if url == config['toc_url']:
+            return toc_element['id']
+        return # TODO chapter ids, subsection ids
+
+    """
+    assemble the posts (with metadata)
+    eg dict(final_url=..., title_soup=..., body_soups=)
+    
+    for each scraped link, parse its content and extract the title/body
+    """
+    def parse_post(html):
+        page_soup = BeautifulSoup(html, 'html.parser')
+        title_soup = page_soup.select(config['post_title_selector'])[0]
+        body_soups = page_soup.select(config['post_body_selector'])
+        return dict(
+            title_soup=title_soup,
+            body_soups=body_soups,
+        )
+
+    posts = []
+    for link in scraped_toc_links:
+        print(f"Parsing post: {link['final_url']}")
+        parsed_post = parse_post(link['html'])
+        parsed_post['final_url'] = link['final_url']
+        posts.append(parsed_post)
+
+elif config['crawl_mode'] == 'incremental':
+
+
+else:
+    raise Exception("Crawl mode must be either 'toc' or 'incremental'")
 
 """
 filter title/body/blacklisted things/etc
