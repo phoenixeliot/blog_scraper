@@ -1,7 +1,7 @@
 crawl_mode: 'toc'
 toc_url: 'https://meaningness.com/'
 toc_selector: '.book-toc'
-toc_keep_original_formatting: false
+toc_keep_original_formatting: true
 post_title_selector: '#page-title'
 post_body_selector: '.node-content'
 scrape_images: false

@@ -5,11 +5,16 @@ class FetchScraper():
     def scrape(self, url, **kwargs):
         print("Scraping " + url)
         try:
-            page = urllib.request.urlopen(url).read()
-            return page
+            # TODO: Rewrite to match the other's rewrite
+            response = urllib.request.urlopen(url)
+            html = response.read()
+            return dict(
+                html=html,
+                final_url=response.url,  # TODO: test this on any site that has redirects
+            )
         except urllib.error.HTTPError as e:
-            print("Couldn't fetch URL " + url, e)
-            exit()
+            print("Couldn't scrape URL " + url, e)
+            raise e
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -39,5 +44,8 @@ class SeleniumScraper():
             WebDriverWait(self.driver, 5).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, wait_for_selector)))
         if js:
             self.driver.execute_script(js)
-        page = self.driver.page_source.encode('utf-8').strip()
-        return page
+        html = self.driver.page_source.encode('utf-8').strip()
+        return dict(
+            html=html,
+            final_url=self.driver.current_url,
+        )
