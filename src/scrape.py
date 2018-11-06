@@ -264,7 +264,7 @@ def filter_post(post):
         if config['blacklist_texts']:
             # TODO: Clean up this hack for Ward/Worm. Assumes we only care about <a>'s.
             for tag in body_soup.select('a[href]'):
-                if tag.text in config['blacklist_texts']:
+                if tag.text.strip() in config['blacklist_texts']:
                     tag.decompose()
 
 for post in posts:
@@ -305,6 +305,7 @@ if config['scraped_linked_local_pages']:
         for scrape_result in scraped_extra_pages:
             try:
                 extra_page = parse_post(scrape_result['html'])
+                filter_post(extra_page)
                 extra_page['final_url'] = scrape_result['final_url']
                 extra_pages.append(extra_page)
 
@@ -318,6 +319,13 @@ if config['scraped_linked_local_pages']:
 
         posts += extra_pages  # TODO: Consider cleanup by keeping these separate
         extra_page_urls = find_linked_extras(extra_pages)
+
+"""
+If a custom rewrite_post is provided, run it now
+"""
+if config['rewrite_post']:
+    for post in posts:
+        config['rewrite_post'](post)
 
 """
 grant ids to each post via their title element
@@ -451,7 +459,7 @@ book_html = f"""
 Write out the file
 """
 
-book_file = open(os.path.join(os.path.dirname(__file__), '../tmp', os.path.splitext(args.config_filename)[0] + '.html'), 'w')
-book_file.write(book_html)
+book_file = open(os.path.join(os.path.dirname(__file__), '../tmp', os.path.splitext(args.config_filename)[0] + '.html'), 'wb')
+book_file.write(book_html.encode('utf-8'))
 
 print("Done.")
