@@ -112,6 +112,20 @@ def absolute_from_relative_url(url):
     return uritools.urijoin(config['toc_url'], url)
 
 """
+Helper functions for iterating over all posts or css-selections from posts
+"""
+
+def post_body_soups_iter():
+    for post in posts:
+        for body_soup in post['body_soups']:
+            yield body_soup
+
+def post_select_iter(selector):
+    for body_soup in post_body_soups_iter():
+        for element in body_soup.select(selector):
+            yield (post, element)
+
+"""
 Set up the scraper engine
 """
 if config['scraper_engine'] == 'selenium':
@@ -254,32 +268,29 @@ Scrape pages not found in the TOC but linked by other pages (if they're on the s
 
 extra_count = 0
 if config['scraped_linked_local_pages']:
-    for post in posts:
-        for body_soup in post['body_soups']:
-            for element in body_soup.select('[href]'):
-                full_href = uritools.urijoin(post['final_url'], element['href'])
-                defragged_href = uritools.uridefrag(full_href).uri
-                subsection_id = uritools.urisplit(full_href).fragment
-                # final_defrag_url = get_redirect(defragged_href)
+    for (post, element) in post_select_iter('[href]'):
+        full_href = uritools.urijoin(post['final_url'], element['href'])
+        defragged_href = uritools.uridefrag(full_href).uri
+        subsection_id = uritools.urisplit(full_href).fragment
 
-                if not url_is_included(defragged_href):
-                    href_parts = uritools.urisplit(full_href)
-                    toc_url_parts = uritools.urisplit(redirects[config['toc_url']])
-                    if href_parts.host == toc_url_parts.host:  # Never try to include linked pages from other domains
-                        try:
-                            print("Scraping extra:")
-                            scrape_result = scraper.scrape(full_href, wait_for_selector=config['post_body_selector'])
-                            redirects[full_href] = scrape_result['final_url']
-                            mark_url_included(full_href)
+        if not url_is_included(defragged_href):
+            href_parts = uritools.urisplit(full_href)
+            toc_url_parts = uritools.urisplit(redirects[config['toc_url']])
+            if href_parts.host == toc_url_parts.host:  # Never try to include linked pages from other domains
+                try:
+                    print("Scraping extra:")
+                    scrape_result = scraper.scrape(full_href, wait_for_selector=config['post_body_selector'])
+                    redirects[full_href] = scrape_result['final_url']
+                    mark_url_included(full_href)
 
-                            extra_page = parse_post(scrape_result['html'])
-                            extra_page['final_url'] = scrape_result['final_url']
+                    extra_page = parse_post(scrape_result['html'])
+                    extra_page['final_url'] = scrape_result['final_url']
 
-                            extra_count += 1
-                            final_url_to_id[extra_page['final_url']] = 'extra' + str(extra_count)
-                            posts.append(extra_page)
-                        except urllib.error.HTTPError as e:
-                            pass
+                    extra_count += 1
+                    final_url_to_id[extra_page['final_url']] = 'extra' + str(extra_count)
+                    posts.append(extra_page)
+                except urllib.error.HTTPError as e:
+                    pass
 
 """
 grant ids to each post via their title element
@@ -290,26 +301,13 @@ for post in posts:
     post['title_soup']['id'] = final_url_to_id[post['final_url']]
     print(post['title_soup'])
 
-# """
-# get all the elements in posts (or TOC) with ids
-# """
-# toc_elements_with_ids = toc_element.select('[id]')
-# title_elements = map(lambda p: p['title_soup'], posts)
-# subsection_elements_with_ids = []
-# for post in posts:
-#     for body_soup in post['body_soups']:
-#         subsection_elements_with_ids += body_soup.select('[id]')
-# TODO oh wait no we need to keep the source_url associated with it to do stuff
-
 """
 replace post subsection ids to new unique ids
 """
 
-for post in posts:
-    for body_soup in post['body_soups']:
-        for element in body_soup.select('[id]'):
-            chap_id = final_url_to_id[post['final_url']]
-            element['id'] = chap_id + '_' + element['id']
+for (post, element) in post_select_iter('[id]'):
+    chap_id = final_url_to_id[post['final_url']]
+    element['id'] = chap_id + '_' + element['id']
 # TODO: This doesn't create a mapping and instead just changes it in place. Could this be cleaner?
 
 """
@@ -324,38 +322,44 @@ for link in toc_links:
 replace hrefs from links in posts to use new ids
 """
 
-for post in posts:
-    for body_soup in post['body_soups']:
-        for element in body_soup.select('[href]'):
-            full_href = uritools.urijoin(post['final_url'], element['href'])
-            defragged_href = uritools.uridefrag(full_href).uri
-            subsection_id = uritools.urisplit(full_href).fragment
-            final_defrag_url = get_redirect(defragged_href)
+for (post, element) in post_select_iter('[href]'):
+    full_href = uritools.urijoin(post['final_url'], element['href'])
+    defragged_href = uritools.uridefrag(full_href).uri
+    subsection_id = uritools.urisplit(full_href).fragment
+    final_defrag_url = get_redirect(defragged_href)
 
-            if final_defrag_url in final_url_to_id:
-                chap_id = '#' + final_url_to_id[final_defrag_url]
-                # TODO: Display a warning if subsection ID can't be found. We're currently assuming they line up. Should point to just the chapter if broken.
-                if subsection_id:
-                    final_href = chap_id + '_' + subsection_id
-                    print(f"Replacing an internal subsection link: {post['final_url']} {final_href}")
-                else:
-                    final_href = chap_id
-                    print(f"Replacing an internal chapter link: {post['final_url']} {final_href}")
-                element['href'] = final_href
+    if final_defrag_url in final_url_to_id:
+        chap_id = '#' + final_url_to_id[final_defrag_url]
+        # TODO: Display a warning if subsection ID can't be found. We're currently assuming they line up. Should point to just the chapter if broken.
+        if subsection_id:
+            final_href = chap_id + '_' + subsection_id
+            print(f"Replacing an internal subsection link: {post['final_url']} {final_href}")
+        else:
+            final_href = chap_id
+            print(f"Replacing an internal chapter link: {post['final_url']} {final_href}")
+        element['href'] = final_href
 
 """
 Add icon to external links, so I know not to click them on my kindle
 """
 
 if config['external_link_symbol']:
-    for post in posts:
-        for body_soup in post['body_soups']:
-            for element in body_soup.select('[href]'):
-                full_href = uritools.urijoin(post['final_url'], element['href'])
-                final_url = get_redirect(full_href)
-                if not url_is_included(final_url):
-                    print(f"Marking link as external: {final_url}")
-                    element.string += config['external_link_symbol']
+    for (post, element) in post_select_iter('[href]'):
+        full_href = uritools.urijoin(post['final_url'], element['href'])
+        final_url = get_redirect(full_href)
+        if not url_is_included(final_url):
+            print(f"Marking link as external: {final_url}")
+            element.string += config['external_link_symbol']
+
+"""
+Update image src's to be full URLs
+"""
+
+for (post, element) in post_select_iter('[src]'):
+    full_src = uritools.urijoin(post['final_url'], element['src'])
+    if element['src'] != full_src:
+        print(f"Updating image src from {element['src']} to {full_src}")
+        element['src'] = full_src
 
 """
 Assemble the output html
