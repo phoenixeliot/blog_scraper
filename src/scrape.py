@@ -190,14 +190,20 @@ else:
     max_threads = 10
 
 def multi_scrape_html(href):
-    scraper_results = scraper.scrape(href, wait_for_selector=config['post_body_selector'])
-    return dict(
-        href=href,
-        html=scraper_results['html'],
-        final_url=scraper_results['final_url'],
-    )
+    try:
+        scraper_results = scraper.scrape(href, wait_for_selector=config['post_body_selector'])
+        return dict(
+            href=href,
+            html=scraper_results['html'],
+            final_url=scraper_results['final_url'],
+        )
+    except urllib.error.HTTPError:  # TODO: Do something analogous for Selenium. Probably in several places.
+        return None
 with multiprocessing.Pool(min(len(toc_links), max_threads)) as thread_pool:
-    scraped_toc_links = thread_pool.map(multi_scrape_html, map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
+    scraped_toc_links = list(filter(
+        lambda x: x is not None,
+        thread_pool.map(multi_scrape_html, map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
+    ))
 
 # Record the TOC pages into included_scraped_urls
 for link in scraped_toc_links:
@@ -268,31 +274,50 @@ for post in posts:
 Scrape pages not found in the TOC but linked by other pages (if they're on the same domain)
 """
 
-extra_count = 0
 if config['scraped_linked_local_pages']:
-    for (post, element) in post_select_iter('[href]'):
-        full_href = uritools.urijoin(post['final_url'], element['href'])
-        defragged_href = uritools.uridefrag(full_href).uri
-        subsection_id = uritools.urisplit(full_href).fragment
+    def find_linked_extras(posts):
+        extra_page_urls = []
+        for post in posts:
+            for body_soup in post['body_soups']:
+                for element in body_soup.select('[href]'):
+                    full_href = uritools.urijoin(post['final_url'], element['href'])
+                    defragged_href = uritools.uridefrag(full_href).uri
 
-        if not url_is_included(defragged_href):
-            href_parts = uritools.urisplit(full_href)
-            toc_url_parts = uritools.urisplit(redirects[config['toc_url']])
-            if href_parts.host == toc_url_parts.host:  # Never try to include linked pages from other domains
-                try:
-                    print("Scraping extra:")
-                    scrape_result = scraper.scrape(full_href, wait_for_selector=config['post_body_selector'])
-                    redirects[full_href] = scrape_result['final_url']
-                    mark_url_included(scrape_result['final_url'])
+                    if not url_is_included(defragged_href):
+                        href_parts = uritools.urisplit(full_href)
+                        toc_url_parts = uritools.urisplit(redirects[config['toc_url']])
+                        if href_parts.host == toc_url_parts.host:  # Never try to include linked pages from other domains
+                            if defragged_href not in extra_page_urls:
+                                extra_page_urls.append(defragged_href)  # TODO: defragged, or full? Uniqueness or is the fragment important?
+        return extra_page_urls
 
-                    extra_page = parse_post(scrape_result['html'])
-                    extra_page['final_url'] = scrape_result['final_url']
+    extra_page_urls = find_linked_extras(posts)
+    extra_pages = []
+    extra_count = 1
+    while len(extra_page_urls) > 0:
+        print("Scraping a batch of extras:")
+        print('\n'.join(extra_page_urls))
+        with multiprocessing.Pool(min(len(toc_links), max_threads)) as thread_pool:
+            scraped_extra_pages = list(filter(lambda x: x is not None, thread_pool.map(multi_scrape_html, extra_page_urls)))
 
-                    extra_count += 1
-                    final_url_to_id[extra_page['final_url']] = 'extra' + str(extra_count)
-                    posts.append(extra_page)
-                except urllib.error.HTTPError as e:
-                    pass
+        extra_pages = []
+        # extra_pages = list(map(lambda scraped: parse_post(scraped['html']), scraped_extra_pages))
+        for scrape_result in scraped_extra_pages:
+            try:
+                extra_page = parse_post(scrape_result['html'])
+                extra_page['final_url'] = scrape_result['final_url']
+                extra_pages.append(extra_page)
+
+                redirects[scrape_result['href']] = scrape_result['final_url']
+                mark_url_included(scrape_result['final_url'])
+                final_url_to_id[scrape_result['final_url']] = 'extra' + str(extra_count)  # TODO: Fragment might matter here (see above TODO)
+                extra_count += 1
+            except:
+                pass  # TODO: Handle if a page links to an image for some reason (Meaningness does this somewhere)
+
+
+        posts += extra_pages  # TODO: Consider cleanup by keeping these separate
+        extra_page_urls = find_linked_extras(extra_pages)
 
 """
 grant ids to each post via their title element
@@ -334,10 +359,10 @@ for (post, element) in post_select_iter('[href]'):
         # TODO: Display a warning if subsection ID can't be found. We're currently assuming they line up. Should point to just the chapter if broken.
         if subsection_id:
             final_href = chap_id + '_' + subsection_id
-            print(f"Replacing an internal subsection link: {post['final_url']} {final_href}")
+            print(f"Replacing an internal subsection link: {full_href} {final_href}")
         else:
             final_href = chap_id
-            print(f"Replacing an internal chapter link: {post['final_url']} {final_href}")
+            print(f"Replacing an internal chapter link: {full_href} {final_href}")
         element['href'] = final_href
 
 """
@@ -350,31 +375,33 @@ if config['external_link_symbol']:
         final_url = get_redirect(full_href)
         if not url_is_included(final_url):
             print(f"Marking link as external: {final_url}")
-            element.string += config['external_link_symbol']
+            element.string = (element.string or '') + config['external_link_symbol']
 
-
+"""
+Scrape external images and replace their src's with base64 encoded versions
+"""
 if config['scrape_images']:
-    """
-    Scrape external images and replace their src's with base64 encoded versions
-    """
     images_by_src = defaultdict(lambda: [])
     for (post, element) in post_select_iter('[src]'):
         full_src = uritools.urijoin(post['final_url'], element['src'])
         images_by_src[full_src].append(element)
 
     def multi_scrape_image(src):
-        scraper_results = scraper.scrape(src, wait_for_selector=config['post_body_selector'])
-        return dict(
-            src=src,
-            data=scraper_results['html'],
-            response=scraper_results['response'],
-        )
+        try:
+            scraper_results = scraper.scrape(src, wait_for_selector=config['post_body_selector'])
+            return dict(
+                src=src,
+                data=scraper_results['html'],
+                response=scraper_results['response'],
+            )
+        except urllib.error.HTTPError:
+            return None
 
     with multiprocessing.Pool(min(len(images_by_src), max_threads)) as thread_pool:
-        scraped_images = thread_pool.map(
+        scraped_images = list(filter(lambda x: x is not None, thread_pool.map(
             multi_scrape_image,
             images_by_src.keys(),
-        )
+        )))
 
     # Record the TOC pages into included_scraped_urls
     for scraped_image in scraped_images:
@@ -384,10 +411,10 @@ if config['scrape_images']:
             print(f"Inlining an image as base64: {image_tag['src']}")
             image_tag['src'] = f"data:{content_type};base64,{base64_image}"
 
+# """
+# Update image src's to be full URLs
+# """
 else:
-    """
-    Update image src's to be full URLs
-    """
     for (post, element) in post_select_iter('[src]'):
         full_src = uritools.urijoin(post['final_url'], element['src'])
         if element['src'] != full_src:
@@ -399,7 +426,7 @@ Assemble the output html
 """
 
 book_html = ""
-if config['keep_original_formatting']:
+if config['toc_keep_original_formatting']:
     toc_result_html = str(toc_element)
 else:
     toc_result_html = '<h1 id="toc">Table of Contents</h1>' + '<br>'.join(map(lambda link: str(link['tag']), toc_links))
