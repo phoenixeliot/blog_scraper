@@ -1,0 +1,10 @@
+crawl_mode: 'toc'
+scraper_engine: 'selenium'
+toc_url: 'http://mindingourway.com/guilt/'
+toc_keep_original_formatting: true
+toc_selector: '.post.page'
+post_title_selector: '.post-header'
+post_body_selector: '.post-content'
+scrape_images: true
+external_link_symbol: '↗︎︎'
+scraped_linked_local_pages: true

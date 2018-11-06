@@ -81,6 +81,7 @@ def get_redirect(url):
     # if same domain, try scraping it
     if url_parts.host == toc_url_parts.host:
         try:
+            print(f"Scraping url for get_redirect: {url}")
             scraper_result = scraper.scrape(url, wait_for_selector=config['post_body_selector'])
             redirects[url] = scraper_result['final_url']
             return redirects[url]  # TODO: Make store this scraped result in the book as well?
@@ -141,6 +142,7 @@ Extract its links and put them in the Pile O' Links
 """
 
 expand_toc_js = config['toc_js']
+print(f"Scraping table of contents: {config['toc_url']}")
 toc_scrape_result = scraper.scrape(config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
 
 # Record the scrape results in included_scraped_urls and redirects
@@ -191,6 +193,7 @@ else:
 
 def multi_scrape_html(href):
     try:
+        print(f"Scraping post: {href}")
         scraper_results = scraper.scrape(href, wait_for_selector=config['post_body_selector'])
         return dict(
             href=href,
@@ -249,6 +252,7 @@ def parse_post(html):
 
 posts = []
 for link in scraped_toc_links:
+    print(f"Parsing post: {link['final_url']}")
     parsed_post = parse_post(link['html'])
     parsed_post['final_url'] = link['final_url']
     posts.append(parsed_post)
@@ -268,7 +272,16 @@ def filter_post(post):
                     tag.decompose()
 
 for post in posts:
+    print(f"Filtering post: {post['final_url']}")
     filter_post(post)
+
+"""
+If a custom rewrite_post is provided, run it now
+"""
+if config['rewrite_post']:
+    for post in posts:
+        print(f"Running config.rewrite_post: {post['final_url']}")
+        config['rewrite_post'](post)
 
 """
 Scrape pages not found in the TOC but linked by other pages (if they're on the same domain)
@@ -305,7 +318,10 @@ if config['scraped_linked_local_pages']:
         for scrape_result in scraped_extra_pages:
             try:
                 extra_page = parse_post(scrape_result['html'])
+                # TODO: Encapsulate all the stuff we do with new pages into one function (it's copied above as well for non-extras)
                 filter_post(extra_page)
+                if config['rewrite_post']:
+                    config['rewrite_post'](extra_page)
                 extra_page['final_url'] = scrape_result['final_url']
                 extra_pages.append(extra_page)
 
@@ -321,19 +337,11 @@ if config['scraped_linked_local_pages']:
         extra_page_urls = find_linked_extras(extra_pages)
 
 """
-If a custom rewrite_post is provided, run it now
-"""
-if config['rewrite_post']:
-    for post in posts:
-        config['rewrite_post'](post)
-
-"""
 grant ids to each post via their title element
 """
 for post in posts:
-    print(post['title_soup'])
+    print(f"Adding id to chapter: {post['final_url']} id={final_url_to_id[post['final_url']]}")
     post['title_soup']['id'] = final_url_to_id[post['final_url']]
-    print(post['title_soup'])
 
 """
 replace post subsection ids to new unique ids
@@ -390,13 +398,14 @@ Scrape external images and replace their src's with base64 encoded versions
 """
 if config['scrape_images']:
     images_by_src = defaultdict(lambda: [])
-    for (post, element) in post_select_iter('[src]'):
+    for (post, element) in post_select_iter('img[src]'):
         full_src = uritools.urijoin(post['final_url'], element['src'])
         images_by_src[full_src].append(element)
 
     def multi_scrape_image(src):
         try:
-            scraper_results = scraper.scrape(src, wait_for_selector=config['post_body_selector'])
+            print(f"Scraping image: {src}")
+            scraper_results = scraper.scrape(src)
             return dict(
                 src=src,
                 data=scraper_results['html'],
@@ -414,7 +423,25 @@ if config['scrape_images']:
     # Record the TOC pages into included_scraped_urls
     for scraped_image in scraped_images:
         for image_tag in images_by_src[scraped_image['src']]:
-            content_type = dict(scraped_image['response'].headers._headers)['Content-Type']
+            # TODO: Don't redundantly re-encode images used multiple times in the book
+            if scraped_image['response']:
+                content_type = dict(scraped_image['response'].headers._headers)['Content-Type']
+            else:
+                # TODO: For selenium, maybe just grab the images out of the page instead of navigating to them directly
+                content_types = {
+                    '.svg': 'image/svg+xml',
+                    '.gif': 'image/gif',
+                    '.jpg': 'image/jpeg',
+                    '.jpeg': 'image/jpeg',
+                    '.png': 'image/png',
+                }
+                for extension, content_type_candidate in content_types.items():
+                    if extension in scraped_image['src']:
+                        content_type = content_type_candidate
+                        break
+                else:
+                    print(f"Skipped image with unknown content type: {scraped_image['src']}")
+                    continue  # Skip this image if we don't know its encoding
             base64_image = base64.b64encode(scraped_image['data']).decode('ascii')
             print(f"Inlining an image as base64: {image_tag['src']}")
             image_tag['src'] = f"data:{content_type};base64,{base64_image}"

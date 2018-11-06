@@ -1,7 +1,11 @@
 import urllib.request
 import urllib.error
 import uritools
-
+import selenium.common.exceptions
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions
+from selenium.webdriver.common.by import By
 
 def encode_url(url):
     parts = list(uritools.urisplit(url))
@@ -12,7 +16,6 @@ def encode_url(url):
 
 class FetchScraper():
     def scrape(self, url, **kwargs):
-        print("Scraping " + url)
         url = encode_url(url)
         try:
             # TODO: Rewrite to match the other's rewrite
@@ -27,12 +30,6 @@ class FetchScraper():
             print("Couldn't scrape URL " + url, e)
             raise e
 
-from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions
-from selenium.webdriver.common.by import By
-import time
-# TODO: Make a class to encapsulate this scraper, which can reuse the same selenium driver instance and quit after everything is done
 class SeleniumScraper():
     def __init__(self, options={}):
         driver_options = webdriver.ChromeOptions()
@@ -48,16 +45,20 @@ class SeleniumScraper():
             pass
 
     def scrape(self, url, wait_for_selector=None, js=None):
-        print("Scraping " + url)
+        # print("Scraping " + url)
         self.driver.get(url)
         # TODO: Modularize this; this is specific to Agenty Duck
         if wait_for_selector:
-            WebDriverWait(self.driver, 5).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, wait_for_selector)))
+            try:
+                WebDriverWait(self.driver, 5).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, wait_for_selector)))
+            except selenium.common.exceptions.TimeoutException as e:
+                pass
+                print()
         if js:
             self.driver.execute_script(js)
         html = self.driver.page_source.encode('utf-8').strip()
         return dict(
             html=html,
             final_url=self.driver.current_url,
-            # response=response,  # TODO: Figure out how to implement content-type stuff for images with Selenium below
+            response=None,  # TODO: Figure out how to implement content-type stuff for images with Selenium below
         )

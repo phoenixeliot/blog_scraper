@@ -133,14 +133,16 @@ Every [chapter, linked id'd tag] will need a hash_id
 
 ## Things not yet handled
 - hosting-specific modes (eg blogspot has weird archive-by-month/year stuff)
-- TOC has links to eg "all posts in october" to ignore (I think blogspot does this? or maybe just agenty duck)
-- Embed the original TOC text with the links updated (so you get stuff like Ward's description of the prologue)
+x TOC has links to eg "all posts in october" to ignore (I think blogspot does this? or maybe just agenty duck)
+  x handled with post_url_pattern
+x Embed the original TOC text with the links updated (so you get stuff like Ward's description of the prologue)
 - Embed footnote-like things for external links, so you can see that it's external and what the URL is before opening it
-- Some links will redirect — we want to back-substitute the final URL into all links that go there
-  - eg https://www.parahumans.net/2017/10/26/glow-worm-0-03/ -> https://www.parahumans.net/2017/10/26/glow-worm-0-3/
-- Clean up empty tags (eg <strong>&nbsp; &nbsp; &nbsp; </strong>, which is left over after removing "Next Chapter"s in Ward)
-- Could support python config files, which would allow providing a cleanup function inside the config, for site-specific cleanup
-
+  x Add symbol to external links
+x Some links will redirect — we want to back-substitute the final URL into all links that go there
+  x eg https://www.parahumans.net/2017/10/26/glow-worm-0-03/ -> https://www.parahumans.net/2017/10/26/glow-worm-0-3/
+x Clean up empty tags (eg <strong>&nbsp; &nbsp; &nbsp; </strong>, which is left over after removing "Next Chapter"s in Ward)
+x Could support python config files, which would allow providing a cleanup function inside the config, for site-specific cleanup
+- Automate fallback to Selenium if normal scraping doesn't work?
 
 
 

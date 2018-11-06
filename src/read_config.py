@@ -15,7 +15,7 @@ def read_config(filename):
         rewrite_post = importlib.import_module(config_py_path, 'rewrite_post').rewrite_post
         config['rewrite_post'] = rewrite_post
     except Exception as e:
-        config['rewrite_post'] = (lambda: None)
+        pass
 
     return config
 

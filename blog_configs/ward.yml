@@ -6,7 +6,7 @@ toc_selector: '.entry-content'
 post_url_pattern: '.*/\d+/\d+/\d+/.+'
 post_title_selector: '.entry-title'
 post_body_selector: '.entry-content'
-scrape_images: false
+scrape_images: true
 blacklist_selector: '.sharedaddy'
 external_link_symbol: '↗︎︎'
 blacklist_texts:

@@ -10,5 +10,9 @@ post_title_selector: '.entry-title' # element that contains the title
 post_body_selector: '.entry-content' # element that contains the post content
 scrape_images: false # leave off for dry runs. Downloads and embeds the image into the page.
 blacklist_selector: '.sharedaddy'
+blacklist_texts: # Remove elements that contain only this text (excluding start/end whitespace)
+  - 'Next Chapter'
+  - 'Last Chapter'
+  - 'Previous Chapter'
 external_link_symbol: '↗︎︎' # Add this symbol to external links, so you know not to click them on an ebook reader
 scraped_linked_local_pages: true # Also scrape pages linked by chapters (but not by the TOC) and append them at the end of the book
