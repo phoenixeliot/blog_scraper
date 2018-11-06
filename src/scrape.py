@@ -6,27 +6,20 @@ import urllib.error
 import uritools
 from bs4 import BeautifulSoup
 
-# from src.blog_post import BlogPost
-from src.book_assembler import BookAssembler
 from src.read_config import read_config
 from src.scraper_engines import SeleniumScraper, FetchScraper
-from src.toc_manager import TOCManager
 import argparse
 
-import timeit
 
-
-## Parse command line arguments to fetch the config data
+"""
+Parse command line arguments to fetch the config data
+"""
 argParser = argparse.ArgumentParser(description='Process CLI arguments')
 argParser.add_argument('config_filename', metavar='config file name', type=str,
-                       help="Name of the .yml config file for the blog you're scraping")
+                       help="Name (without path) of the .yml config file for the blog you're scraping")
 args = argParser.parse_args()
 
 config = read_config(args.config_filename)
-
-
-# scrape the TOC
-# for each page in the TOC, scrape that link too
 
 """
 things that need mapping for link replacement:
@@ -64,25 +57,45 @@ Set up the link piles
 redirects = {}
 
 def get_redirect(url):
+    # simple case: it's already in the dict
     url = absolute_from_relative_url(url)
     if url in redirects:
         return redirects[url]
+
+    # Try looking it up without the fragment
+    defrag_url = uritools.uridefrag(url).uri
+    fragment = uritools.uridefrag(url).uri
+    if fragment:
+        if defrag_url in redirects:
+            return uritools.urijoin(redirects[defrag_url], '#'+fragment)
+
+    # Try fixing http/https to match the TOC
     url_parts = uritools.urisplit(url)
     toc_url_parts = uritools.urisplit(redirects[config['toc_url']])
     fixed_scheme_url = uritools.uriunsplit(list(toc_url_parts)[:1] + list(url_parts)[1:])
     if fixed_scheme_url in redirects:
         return redirects[fixed_scheme_url]
-    # TODO: Or maybe we can just scrape the URL and get the definitive redirect value!
+
+    # if same domain, try scraping it
     if url_parts.host == toc_url_parts.host:
         try:
-            scraper_result = scraper.scrape(url)
+            scraper_result = scraper.scrape(url, wait_for_selector=config['post_body_selector'])
             redirects[url] = scraper_result['final_url']
             return redirects[url]  # TODO: Make store this scraped result in the book as well?
         except urllib.error.HTTPError as e:
             return url  # TODO: Could return '' or something but for now leaving it seems fine
-    # if same domain, try scraping it
     # else, couldn't find it, so leave it alone.
+
     return url
+
+# list of URLs that have been scraped and will be included in the resulting book (always defragmented)
+included_scraped_urls = set([])
+
+def url_is_included(url):
+    return uritools.uridefrag(url).uri in included_scraped_urls
+
+def mark_url_included(url):
+    included_scraped_urls.add(get_redirect(uritools.uridefrag(url).uri))
 
 # list of link tags in the TOC
 # eg dict(source_url=..., href=...)
@@ -114,7 +127,10 @@ Extract its links and put them in the Pile O' Links
 expand_toc_js = config['toc_js']
 toc_scrape_result = scraper.scrape(config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
 
+# Record the scrape results in included_scraped_urls and redirects
+included_scraped_urls.add(uritools.uridefrag(toc_scrape_result['final_url']).uri)
 redirects[config['toc_url']] = toc_scrape_result['final_url']
+
 soup = BeautifulSoup(toc_scrape_result['html'], 'html.parser')
 toc_element = soup.select(config['toc_selector'])[0]
 
@@ -158,7 +174,7 @@ else:
     max_threads = 10
 
 def multi_scrape_html(href):
-    scraper_results = scraper.scrape(href)
+    scraper_results = scraper.scrape(href, wait_for_selector=config['post_body_selector'])
     return dict(
         href=href,
         html=scraper_results['html'],
@@ -167,6 +183,9 @@ def multi_scrape_html(href):
 with multiprocessing.Pool(min(len(toc_links), max_threads)) as thread_pool:
     scraped_toc_links = thread_pool.map(multi_scrape_html, map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
 
+# Record the TOC pages into included_scraped_urls
+for link in scraped_toc_links:
+    mark_url_included(link['final_url'])
 
 """
 for each scraped_link, add [href -> final_url] to the pile o' redirects
@@ -180,8 +199,10 @@ for link in scraped_toc_links:
 map the final urls to chapter numbers
 """
 final_url_to_chapter_number = {}
+final_url_to_id = {}
 for (chapter_index, link) in enumerate(scraped_toc_links):
     final_url_to_chapter_number[link['final_url']] = chapter_index + 1
+    final_url_to_id[link['final_url']] = 'chap' + str(chapter_index + 1)
 
 # TODO: Flesh this out to handle all the cases
 def final_url_to_hash_id(url):
@@ -195,21 +216,25 @@ eg dict(final_url=..., title_soup=..., body_soups=)
 
 for each scraped link, parse its content and extract the title/body
 """
-posts = []
-for link in scraped_toc_links:
-    page_soup = BeautifulSoup(link['html'], 'html.parser')
+def parse_post(html):
+    page_soup = BeautifulSoup(html, 'html.parser')
     title_soup = page_soup.select(config['post_title_selector'])[0]
     body_soups = page_soup.select(config['post_body_selector'])
-    posts.append(dict(
-        final_url=link['final_url'],
+    return dict(
         title_soup=title_soup,
         body_soups=body_soups,
-    ))
+    )
+
+posts = []
+for link in scraped_toc_links:
+    parsed_post = parse_post(link['html'])
+    parsed_post['final_url'] = link['final_url']
+    posts.append(parsed_post)
 
 """
 filter title/body/blacklisted things/etc
 """
-for post in posts:
+def filter_post(post):
     for body_soup in post['body_soups']:
         if config['blacklist_selector']:
             for tag in body_soup.select(config['blacklist_selector']):
@@ -220,12 +245,49 @@ for post in posts:
                 if tag.text in config['blacklist_texts']:
                     tag.decompose()
 
+for post in posts:
+    filter_post(post)
+
+"""
+Scrape pages not found in the TOC but linked by other pages (if they're on the same domain)
+"""
+
+extra_count = 0
+if config['scraped_linked_local_pages']:
+    for post in posts:
+        for body_soup in post['body_soups']:
+            for element in body_soup.select('[href]'):
+                full_href = uritools.urijoin(post['final_url'], element['href'])
+                defragged_href = uritools.uridefrag(full_href).uri
+                subsection_id = uritools.urisplit(full_href).fragment
+                # final_defrag_url = get_redirect(defragged_href)
+
+                if not url_is_included(defragged_href):
+                    href_parts = uritools.urisplit(full_href)
+                    toc_url_parts = uritools.urisplit(redirects[config['toc_url']])
+                    if href_parts.host == toc_url_parts.host:  # Never try to include linked pages from other domains
+                        try:
+                            print("Scraping extra:")
+                            scrape_result = scraper.scrape(full_href, wait_for_selector=config['post_body_selector'])
+                            redirects[full_href] = scrape_result['final_url']
+                            mark_url_included(full_href)
+
+                            extra_page = parse_post(scrape_result['html'])
+                            extra_page['final_url'] = scrape_result['final_url']
+
+                            extra_count += 1
+                            final_url_to_id[extra_page['final_url']] = 'extra' + str(extra_count)
+                            posts.append(extra_page)
+                        except urllib.error.HTTPError as e:
+                            pass
+
 """
 grant ids to each post via their title element
 """
+# TODO: Maybe grant differently named ids to extra linked posts?
 for post in posts:
     print(post['title_soup'])
-    post['title_soup']['id'] = 'chap' + str(final_url_to_chapter_number[post['final_url']])
+    post['title_soup']['id'] = final_url_to_id[post['final_url']]
     print(post['title_soup'])
 
 # """
@@ -246,7 +308,7 @@ replace post subsection ids to new unique ids
 for post in posts:
     for body_soup in post['body_soups']:
         for element in body_soup.select('[id]'):
-            chap_id = 'chap' + str(final_url_to_chapter_number[post['final_url']])
+            chap_id = final_url_to_id[post['final_url']]
             element['id'] = chap_id + '_' + element['id']
 # TODO: This doesn't create a mapping and instead just changes it in place. Could this be cleaner?
 
@@ -256,7 +318,7 @@ replace hrefs in TOC to use new ids
 
 for link in toc_links:
     tag = link['tag']
-    tag['href'] = '#chap' + str(final_url_to_chapter_number[get_redirect(tag['href'])])
+    tag['href'] = '#' + final_url_to_id[get_redirect(tag['href'])]
 
 """
 replace hrefs from links in posts to use new ids
@@ -269,8 +331,10 @@ for post in posts:
             defragged_href = uritools.uridefrag(full_href).uri
             subsection_id = uritools.urisplit(full_href).fragment
             final_defrag_url = get_redirect(defragged_href)
-            if final_defrag_url in final_url_to_chapter_number:
-                chap_id = '#chap' + str(final_url_to_chapter_number[final_defrag_url])
+
+            if final_defrag_url in final_url_to_id:
+                chap_id = '#' + final_url_to_id[final_defrag_url]
+                # TODO: Display a warning if subsection ID can't be found. We're currently assuming they line up. Should point to just the chapter if broken.
                 if subsection_id:
                     final_href = chap_id + '_' + subsection_id
                     print(f"Replacing an internal subsection link: {post['final_url']} {final_href}")
@@ -278,9 +342,20 @@ for post in posts:
                     final_href = chap_id
                     print(f"Replacing an internal chapter link: {post['final_url']} {final_href}")
                 element['href'] = final_href
-            elif config['external_link_symbol']:
-                # If it's not an internal link, add a symbol to the text
-                element.string += config['external_link_symbol']
+
+"""
+Add icon to external links, so I know not to click them on my kindle
+"""
+
+if config['external_link_symbol']:
+    for post in posts:
+        for body_soup in post['body_soups']:
+            for element in body_soup.select('[href]'):
+                full_href = uritools.urijoin(post['final_url'], element['href'])
+                final_url = get_redirect(full_href)
+                if not url_is_included(final_url):
+                    print(f"Marking link as external: {final_url}")
+                    element.string += config['external_link_symbol']
 
 """
 Assemble the output html
@@ -312,7 +387,7 @@ book_html = f"""
 Write out the file
 """
 
-book_file = open(os.path.join(os.path.dirname(__file__), '../tmp', 'book_output.html'), 'w')
+book_file = open(os.path.join(os.path.dirname(__file__), '../tmp', os.path.splitext(args.config_filename)[0] + '.html'), 'w')
 book_file.write(book_html)
 
 print("Done.")

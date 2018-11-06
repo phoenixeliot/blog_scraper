@@ -6,3 +6,4 @@ post_title_selector: '#page-title'
 post_body_selector: '.node-content'
 scrape_images: false
 external_link_symbol: '↗︎︎'
+scraped_linked_local_pages: true
