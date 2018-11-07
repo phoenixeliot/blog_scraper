@@ -3,6 +3,10 @@ crawl_mode: 'toc'
 toc_url: 'http://agentyduck.blogspot.com'
 toc_keep_original_formatting: false
 toc_selector: '#BlogArchive1'
-toc_js: '$("#BlogArchive1 .collapsed .toggle").click()'
+toc_js: '$("#BlogArchive1 .collapsed .toggle").click();'
 post_url_pattern: '.*/\d+/\d+/.*.html'
-scrape_images: false
+post_title_selector: '.post-title'
+post_body_selector: '.post-body'
+scrape_images: true
+#scraped_linked_local_pages: true
+scraped_linked_local_pages: false

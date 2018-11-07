@@ -1,8 +1,6 @@
-crawl_mode: 'toc'
-scraper_engine: 'selenium' # or nothing
-toc_url: 'https://www.parahumans.net/table-of-contents/'
-toc_keep_original_formatting: true
-toc_selector: '.entry-content'
+crawl_mode: 'incremental'
+scraper_engine: 'selenium'
+first_post_url: 'https://www.parahumans.net/2017/10/21/glow-worm-0-1/'
 post_url_pattern: '.*/\d+/\d+/\d+/.+'
 post_title_selector: '.entry-title'
 post_body_selector: '.entry-content'

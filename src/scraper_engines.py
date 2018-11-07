@@ -1,3 +1,4 @@
+import time
 import urllib.request
 import urllib.error
 import uritools
@@ -19,7 +20,8 @@ class FetchScraper():
         url = encode_url(url)
         try:
             # TODO: Rewrite to match the other's rewrite
-            response = urllib.request.urlopen(url)
+            request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'})
+            response = urllib.request.urlopen(request)
             html = response.read()
             return dict(
                 html=html,
@@ -29,11 +31,18 @@ class FetchScraper():
         except urllib.error.HTTPError as e:
             print("Couldn't scrape URL " + url, e)
             raise e
+        except urllib.error.URLError as e:
+            print("Couldn't scrape URL " + url, e)
+            raise e
 
 class SeleniumScraper():
     def __init__(self, options={}):
         driver_options = webdriver.ChromeOptions()
         driver_options.headless = True
+
+        prefs = {"profile.managed_default_content_settings.images": 2}
+        driver_options.add_experimental_option("prefs", prefs)
+
         self.driver = webdriver.Chrome(options=driver_options)
         self.options = options
 
@@ -56,9 +65,10 @@ class SeleniumScraper():
                 print()
         if js:
             self.driver.execute_script(js)
+            time.sleep(5)
         html = self.driver.page_source.encode('utf-8').strip()
         return dict(
             html=html,
             final_url=self.driver.current_url,
-            response=None,  # TODO: Figure out how to implement content-type stuff for images with Selenium below
+            response=None,  # Selenium basically can't scrape images, so we never need the content-type from it
         )

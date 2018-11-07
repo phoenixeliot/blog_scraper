@@ -85,8 +85,10 @@ def get_redirect(url):
             scraper_result = scraper.scrape(url, wait_for_selector=config['post_body_selector'])
             redirects[url] = scraper_result['final_url']
             return redirects[url]  # TODO: Make store this scraped result in the book as well?
-        except urllib.error.HTTPError as e:
+        except urllib.error.HTTPError:
             return url  # TODO: Could return '' or something but for now leaving it seems fine
+        except urllib.error.URLError:
+            return url
     # else, couldn't find it, so leave it alone.
 
     return url
@@ -133,13 +135,15 @@ Set up the scraper engine
 """
 if config['scraper_engine'] == 'selenium':
     scraper = SeleniumScraper()
+    image_scraper = FetchScraper()  # Selenium fails on a bunch of images
     max_threads = 1
 else:
     scraper = FetchScraper()
+    image_scraper = FetchScraper()
     max_threads = 10
 
 DEBUG = False
-DEBUG_POST_LIMIT = 10
+DEBUG_POST_LIMIT = 3
 
 if config['crawl_mode'] == 'toc':
     base_url = config['toc_url']
@@ -201,6 +205,8 @@ if config['crawl_mode'] == 'toc':
                 final_url=scraper_results['final_url'],
             )
         except urllib.error.HTTPError:  # TODO: Do something analogous for Selenium. Probably in several places.
+            return None
+        except urllib.error.URLError:
             return None
     with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
         scraped_toc_links = list(filter(
@@ -468,13 +474,15 @@ if config['scrape_images']:
     def multi_scrape_image(src):
         try:
             print(f"Scraping image: {src}")
-            scraper_results = scraper.scrape(src)
+            scraper_results = image_scraper.scrape(src)
             return dict(
                 src=src,
                 data=scraper_results['html'],
                 response=scraper_results['response'],
             )
         except urllib.error.HTTPError:
+            return None
+        except urllib.error.URLError:
             return None
 
     with multiprocessing.Pool(max(1, min(len(images_by_src), max_threads))) as thread_pool:
@@ -499,7 +507,7 @@ if config['scrape_images']:
                     '.png': 'image/png',
                 }
                 for extension, content_type_candidate in content_types.items():
-                    if extension in scraped_image['src']:
+                    if extension in scraped_image['src'].lower():
                         content_type = content_type_candidate
                         break
                 else:
@@ -549,9 +557,12 @@ book_html = f"""
 </html>
 """
 
+print(f"{len(posts)} posts scraped and assembled.")
 """
 Write out the file
 """
+
+print("Writing file")
 
 book_file = open(os.path.join(os.path.dirname(__file__), '../tmp', os.path.splitext(args.config_filename)[0] + '.html'), 'wb')
 book_file.write(book_html.encode('utf-8'))
