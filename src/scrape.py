@@ -223,10 +223,8 @@ if config['crawl_mode'] == 'toc':
     """
     map the final urls to chapter numbers
     """
-    # final_url_to_chapter_number = {}
     final_url_to_id = {}
     for (chapter_index, link) in enumerate(scraped_toc_links):
-        # final_url_to_chapter_number[link['final_url']] = chapter_index + 1
         final_url_to_id[link['final_url']] = 'chap' + str(chapter_index + 1)
 
     # TODO: Flesh this out to handle all the cases
@@ -272,7 +270,6 @@ elif config['crawl_mode'] == 'incremental':
     """
     Scrape and process a post before continuing on to the next one, in a loop
     """
-
     while next_post_url:
         if DEBUG and len(posts) > DEBUG_POST_LIMIT:
             break
@@ -316,10 +313,8 @@ elif config['crawl_mode'] == 'incremental':
     map the final urls to chapter numbers
     """
     # TODO: DRY this out with the similar code for toc-mode
-    # final_url_to_chapter_number = {}
     final_url_to_id = {}
     for (chapter_index, post) in enumerate(posts):
-        # final_url_to_chapter_number[post['final_url']] = chapter_index + 1
         final_url_to_id[post['final_url']] = 'chap' + str(chapter_index + 1)
 
 else:
