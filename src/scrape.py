@@ -73,13 +73,13 @@ def get_redirect(url):
 
     # Try fixing http/https to match the TOC
     url_parts = uritools.urisplit(url)
-    toc_url_parts = uritools.urisplit(redirects[config['toc_url']])
-    fixed_scheme_url = uritools.uriunsplit(list(toc_url_parts)[:1] + list(url_parts)[1:])
+    base_url_parts = uritools.urisplit(redirects[base_url])
+    fixed_scheme_url = uritools.uriunsplit(list(base_url_parts)[:1] + list(url_parts)[1:])
     if fixed_scheme_url in redirects:
         return redirects[fixed_scheme_url]
 
     # if same domain, try scraping it
-    if url_parts.host == toc_url_parts.host:
+    if url_parts.host == base_url_parts.host:
         try:
             print(f"Scraping url for get_redirect: {url}")
             scraper_result = scraper.scrape(url, wait_for_selector=config['post_body_selector'])
@@ -112,7 +112,7 @@ post_links = []
 elements_with_ids = []
 
 def absolute_from_relative_url(url):
-    return uritools.urijoin(config['toc_url'], url)
+    return uritools.urijoin(base_url, url)
 
 """
 Helper functions for iterating over all posts or css-selections from posts
@@ -133,10 +133,16 @@ Set up the scraper engine
 """
 if config['scraper_engine'] == 'selenium':
     scraper = SeleniumScraper()
+    max_threads = 1
 else:
     scraper = FetchScraper()
+    max_threads = 10
+
+DEBUG = False
+DEBUG_POST_LIMIT = 10
 
 if config['crawl_mode'] == 'toc':
+    base_url = config['toc_url']
     """
     Scrape the TOC
     Extract its links and put them in the Pile O' Links
@@ -173,8 +179,6 @@ if config['crawl_mode'] == 'toc':
     if config['reverse_order']:
         toc_links = reversed(toc_links)
 
-    DEBUG = False
-    DEBUG_POST_LIMIT = 10
     if DEBUG:
         toc_links = toc_links[:DEBUG_POST_LIMIT]
 
@@ -187,11 +191,6 @@ if config['crawl_mode'] == 'toc':
     Scrape all the pages that the TOC links to (using multithreading, yay!)
     """
 
-    if config['scraper_engine'] == 'selenium':
-        max_threads = 1
-    else:
-        max_threads = 10
-
     def multi_scrape_html(href):
         try:
             print(f"Scraping post: {href}")
@@ -203,7 +202,7 @@ if config['crawl_mode'] == 'toc':
             )
         except urllib.error.HTTPError:  # TODO: Do something analogous for Selenium. Probably in several places.
             return None
-    with multiprocessing.Pool(min(len(toc_links), max_threads)) as thread_pool:
+    with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
         scraped_toc_links = list(filter(
             lambda x: x is not None,
             thread_pool.map(multi_scrape_html, map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
@@ -224,17 +223,17 @@ if config['crawl_mode'] == 'toc':
     """
     map the final urls to chapter numbers
     """
-    final_url_to_chapter_number = {}
+    # final_url_to_chapter_number = {}
     final_url_to_id = {}
     for (chapter_index, link) in enumerate(scraped_toc_links):
-        final_url_to_chapter_number[link['final_url']] = chapter_index + 1
+        # final_url_to_chapter_number[link['final_url']] = chapter_index + 1
         final_url_to_id[link['final_url']] = 'chap' + str(chapter_index + 1)
 
     # TODO: Flesh this out to handle all the cases
-    def final_url_to_hash_id(url):
-        if url == config['toc_url']:
-            return toc_element['id']
-        return # TODO chapter ids, subsection ids
+    # def final_url_to_hash_id(url):
+    #     if url == config['toc_url']:
+    #         return toc_element['id']
+    #     return # TODO chapter ids, subsection ids
 
     """
     assemble the posts (with metadata)
@@ -259,7 +258,69 @@ if config['crawl_mode'] == 'toc':
         posts.append(parsed_post)
 
 elif config['crawl_mode'] == 'incremental':
+    """
+    [stuff TODO]
+    """
 
+    # config['first_post_url'] = 'https://parahumans.wordpress.com/2012/04/21/sentinel-9-6/' # DEBUG
+
+    # base_url is used for joining relative urls and comparisons in many places
+    base_url = config['first_post_url']
+    posts = []
+    next_post_url = config['first_post_url']
+
+    """
+    Scrape and process a post before continuing on to the next one, in a loop
+    """
+
+    while next_post_url:
+        if DEBUG and len(posts) > DEBUG_POST_LIMIT:
+            break
+        """
+        Scrape the post
+        """
+        post_url = next_post_url
+        next_post_url = None
+        print(f"Scraping post: {post_url}")
+        scrape_result = scraper.scrape(post_url, wait_for_selector=config['post_selector'])
+
+        # Record the scrape results in included_scraped_urls and redirects
+        included_scraped_urls.add(uritools.uridefrag(scrape_result['final_url']).uri)
+        redirects[post_url] = scrape_result['final_url']
+
+        """
+        Parse the post and save it to the list
+        """
+        post_soup = BeautifulSoup(scrape_result['html'], 'html.parser')
+        post = dict(
+            title_soup=post_soup.select(config['post_title_selector'])[0],
+            body_soups=post_soup.select(config['post_body_selector']),
+        )
+        if config['rewrite_post']:
+            config['rewrite_post'](post)
+        post['final_url'] = scrape_result['final_url']
+
+        posts.append(post)
+
+        """
+        Find the link to the next post for the next iteration
+        NOTE: Depends on this happening *before* filter_post (so the link is still there)
+        """
+        link_tags = post['body_soups'][0].select('a')
+        for link_tag in link_tags:
+            if 'Next Chapter' in link_tag.text:
+                next_post_url = link_tag['href']
+                break
+
+    """
+    map the final urls to chapter numbers
+    """
+    # TODO: DRY this out with the similar code for toc-mode
+    # final_url_to_chapter_number = {}
+    final_url_to_id = {}
+    for (chapter_index, post) in enumerate(posts):
+        # final_url_to_chapter_number[post['final_url']] = chapter_index + 1
+        final_url_to_id[post['final_url']] = 'chap' + str(chapter_index + 1)
 
 else:
     raise Exception("Crawl mode must be either 'toc' or 'incremental'")
@@ -305,8 +366,8 @@ if config['scraped_linked_local_pages']:
 
                     if not url_is_included(defragged_href):
                         href_parts = uritools.urisplit(full_href)
-                        toc_url_parts = uritools.urisplit(redirects[config['toc_url']])
-                        if href_parts.host == toc_url_parts.host:  # Never try to include linked pages from other domains
+                        base_url_parts = uritools.urisplit(redirects[base_url])
+                        if href_parts.host == base_url_parts.host:  # Never try to include linked pages from other domains
                             if defragged_href not in extra_page_urls:
                                 extra_page_urls.append(defragged_href)  # TODO: defragged, or full? Uniqueness or is the fragment important?
         return extra_page_urls
@@ -317,7 +378,7 @@ if config['scraped_linked_local_pages']:
     while len(extra_page_urls) > 0:
         print("Scraping a batch of extras:")
         print('\n'.join(extra_page_urls))
-        with multiprocessing.Pool(min(len(toc_links), max_threads)) as thread_pool:
+        with multiprocessing.Pool(max(1, min(len(posts), max_threads))) as thread_pool:
             scraped_extra_pages = list(filter(lambda x: x is not None, thread_pool.map(multi_scrape_html, extra_page_urls)))
 
         extra_pages = []
@@ -421,7 +482,7 @@ if config['scrape_images']:
         except urllib.error.HTTPError:
             return None
 
-    with multiprocessing.Pool(min(len(images_by_src), max_threads)) as thread_pool:
+    with multiprocessing.Pool(max(1, min(len(images_by_src), max_threads))) as thread_pool:
         scraped_images = list(filter(lambda x: x is not None, thread_pool.map(
             multi_scrape_image,
             images_by_src.keys(),
@@ -471,7 +532,11 @@ book_html = ""
 if config['toc_keep_original_formatting']:
     toc_result_html = str(toc_element)
 else:
-    toc_result_html = '<h1 id="toc">Table of Contents</h1>' + '<br>'.join(map(lambda link: str(link['tag']), toc_links))
+    if config['crawl_mode'] == 'toc':
+        toc_result_html = '<h1 id="toc">Table of Contents</h1>' + '<br>'.join(map(lambda link: str(link['tag']), toc_links))
+    elif config['crawl_mode'] == 'incremental':
+        toc_link_from_post = lambda post: f"<a href=\"#{final_url_to_id[post['final_url']]}\">{post['title_soup'].text}</a>"
+        toc_result_html = '<h1 id="toc">Table of Contents</h1>' + '<br>'.join(map(toc_link_from_post, posts))
 book_html += toc_result_html
 for post in posts:
     book_html += str(post['title_soup'])

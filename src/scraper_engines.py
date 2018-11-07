@@ -9,7 +9,7 @@ from selenium.webdriver.common.by import By
 
 def encode_url(url):
     parts = list(uritools.urisplit(url))
-    for i in [2,3,4]:
+    for i in [2, 3, 4]:
         if parts[i]:
             parts[i] = urllib.parse.quote(parts[i])  # path
     return uritools.uriunsplit(parts)
