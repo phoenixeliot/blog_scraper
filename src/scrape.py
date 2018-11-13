@@ -8,6 +8,7 @@ from collections import defaultdict
 import uritools
 from bs4 import BeautifulSoup
 
+from src.convert_ebook import convert_ebook
 from src.read_config import read_config
 from src.scraper_engines import SeleniumScraper, FetchScraper
 import argparse
@@ -17,8 +18,10 @@ import argparse
 Parse command line arguments to fetch the config data
 """
 argParser = argparse.ArgumentParser(description='Process CLI arguments')
-argParser.add_argument('config_filename', metavar='config file name', type=str,
+argParser.add_argument('config_filename', metavar='config', type=str,
                        help="Name (without path) of the .yml config file for the blog you're scraping")
+argParser.add_argument('-f', '--format', metavar="format", type=str,
+                       help="output format (eg, epub or mobi; anything calibre's ebook-convert supports)")
 args = argParser.parse_args()
 
 config = read_config(args.config_filename)
@@ -115,6 +118,15 @@ elements_with_ids = []
 
 def absolute_from_relative_url(url):
     return uritools.urijoin(base_url, url)
+
+def parse_post(html):
+    page_soup = BeautifulSoup(html, 'html.parser')
+    title_soup = page_soup.select(config['post_title_selector'])[0]
+    body_soups = page_soup.select(config['post_body_selector'])
+    return dict(
+        title_soup=title_soup,
+        body_soups=body_soups,
+    )
 
 """
 Helper functions for iterating over all posts or css-selections from posts
@@ -245,15 +257,6 @@ if config['crawl_mode'] == 'toc':
     
     for each scraped link, parse its content and extract the title/body
     """
-    def parse_post(html):
-        page_soup = BeautifulSoup(html, 'html.parser')
-        title_soup = page_soup.select(config['post_title_selector'])[0]
-        body_soups = page_soup.select(config['post_body_selector'])
-        return dict(
-            title_soup=title_soup,
-            body_soups=body_soups,
-        )
-
     posts = []
     for link in scraped_toc_links:
         print(f"Parsing post: {link['final_url']}")
@@ -294,11 +297,7 @@ elif config['crawl_mode'] == 'incremental':
         """
         Parse the post and save it to the list
         """
-        post_soup = BeautifulSoup(scrape_result['html'], 'html.parser')
-        post = dict(
-            title_soup=post_soup.select(config['post_title_selector'])[0],
-            body_soups=post_soup.select(config['post_body_selector']),
-        )
+        post = parse_post(scrape_result['html'])
         if config['rewrite_post']:
             config['rewrite_post'](post)
         post['final_url'] = scrape_result['final_url']
@@ -471,32 +470,43 @@ if config['scrape_images']:
         full_src = uritools.urijoin(post['final_url'], element['src'])
         images_by_src[full_src].append(element)
 
-    def multi_scrape_image(src):
-        try:
-            print(f"Scraping image: {src}")
-            scraper_results = image_scraper.scrape(src)
-            return dict(
-                src=src,
-                data=scraper_results['html'],
-                response=scraper_results['response'],
-            )
-        except urllib.error.HTTPError:
-            return None
-        except urllib.error.URLError:
-            return None
+    ## Multi-scraping images currently disabled because of a python segfault (??)
+    # def multi_scrape_image(image_scraper, src):
+    #     try:
+    #         print(f"Scraping image: {src}")
+    #         scraper_results = image_scraper.scrape(src)
+    #         return dict(
+    #             src=src,
+    #             data=scraper_results['html'],
+    #             response=scraper_results['response'],
+    #         )
+    #     except urllib.error.HTTPError:
+    #         print(f"HTTP error on {src}")
+    #         return None
+    #     except urllib.error.URLError:
+    #         print(f"URL error on {src}")
+    #         return None
+    #
+    # with multiprocessing.Pool(max(1, min(len(images_by_src), max_threads))) as thread_pool:
+    #     scraped_images = list(filter(lambda x: x is not None, map(
+    #         multi_scrape_image,
+    #         [(image_scraper, key) for key in images_by_src.keys()],
+    #     )))
 
-    with multiprocessing.Pool(max(1, min(len(images_by_src), max_threads))) as thread_pool:
-        scraped_images = list(filter(lambda x: x is not None, thread_pool.map(
-            multi_scrape_image,
-            images_by_src.keys(),
-        )))
+    scraped_images = list(filter(lambda x: x is not None, map(
+        lambda pair: multi_scrape_image(*pair),
+        [(image_scraper, key) for key in images_by_src.keys()],
+    )))
+
+    print("Processing images")
 
     # Record the TOC pages into included_scraped_urls
     for scraped_image in scraped_images:
         for image_tag in images_by_src[scraped_image['src']]:
+            print(f"Processing image: {image_tag['src']}")
             # TODO: Don't redundantly re-encode images used multiple times in the book
             if scraped_image['response']:
-                content_type = dict(scraped_image['response'].headers._headers)['Content-Type']
+                content_type = scraped_image['response'].headers['Content-Type']
             else:
                 # TODO: For selenium, maybe just grab the images out of the page instead of navigating to them directly
                 content_types = {
@@ -513,9 +523,17 @@ if config['scrape_images']:
                 else:
                     print(f"Skipped image with unknown content type: {scraped_image['src']}")
                     continue  # Skip this image if we don't know its encoding
-            base64_image = base64.b64encode(scraped_image['data']).decode('ascii')
-            print(f"Inlining an image as base64: {image_tag['src']}")
-            image_tag['src'] = f"data:{content_type};base64,{base64_image}"
+            if content_type == 'image/svg+xml':
+                print(f"Inlining an image as svg: {image_tag['src']}")
+                encoded_image = scraped_image['data'].decode('ascii')
+                image_tag['src'] = f"data:{content_type};utf8,{encoded_image}"
+                # svg_tag = BeautifulSoup(encoded_image, 'html.parser')
+                # svg_tag.attrs = image_tag.attrs
+                # image_tag.replace_with(svg_tag)
+            else:
+                print(f"Inlining an image as base64: {image_tag['src']}")
+                encoded_image = base64.b64encode(scraped_image['data']).decode('ascii')
+                image_tag['src'] = f"data:{content_type};base64,{encoded_image}"
 
 # """
 # Update image src's to be full URLs
@@ -564,7 +582,18 @@ Write out the file
 
 print("Writing file")
 
-book_file = open(os.path.join(os.path.dirname(__file__), '../tmp', os.path.splitext(args.config_filename)[0] + '.html'), 'wb')
+def ensure_dir(file_path):
+    directory = os.path.dirname(file_path)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+book_base_name = os.path.splitext(args.config_filename)[0]
+books_folder = os.path.join(os.path.dirname(__file__), '../books')
+ensure_dir(books_folder)
+book_file = open(os.path.join(books_folder, book_base_name + '.html'), 'wb')
 book_file.write(book_html.encode('utf-8'))
 
 print("Done.")
+
+if args.format:
+    convert_ebook(config, book_base_name, args.format)
