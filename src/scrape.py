@@ -264,13 +264,123 @@ if config['crawl_mode'] == 'toc':
         parsed_post['final_url'] = link['final_url']
         posts.append(parsed_post)
 
+elif config['crawl_mode'] == 'nested_archive':
+    base_url = config['toc_url']
+    """
+    Scrape the TOC
+    Extract its links and put them in the Pile O' Links
+    """
+
+    expand_toc_js = config['toc_js']
+    print(f"Scraping archive chunks: {config['toc_url']}")
+    toc_scrape_result = scraper.scrape(config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
+
+    # Record the scrape results in included_scraped_urls and redirects
+    included_scraped_urls.add(uritools.uridefrag(toc_scrape_result['final_url']).uri)
+    redirects[config['toc_url']] = toc_scrape_result['final_url']
+
+    soup = BeautifulSoup(toc_scrape_result['html'], 'html.parser')
+    toc_element = soup.select(config['toc_selector'])[0]
+
+
+
+
+    def is_post_link(tag, post_url_pattern=None):
+        if tag.attrs['href'] is None:
+            return False
+        if tag.attrs['href'].startswith('javascript:'):
+            return False
+        if post_url_pattern is None:  # Not filtering TOC links at all
+            return True
+        return re.match(post_url_pattern, tag.attrs['href']) is not None
+
+
+    toc_links = list(map(
+        lambda tag: dict(
+            tag=tag,
+            source_url=config['toc_url'],
+        ),
+        filter(lambda l: is_post_link(l, config['post_url_pattern']), toc_element.select('a[href]'))
+    ))
+
+    if config['reverse_order']:
+        toc_links = reversed(toc_links)
+
+    if DEBUG:
+        toc_links = toc_links[:DEBUG_POST_LIMIT]
+
+    """
+    Give an ID to the TOC itself
+    """
+    toc_element['id'] = 'toc'
+
+    """
+    Scrape all the pages that the TOC links to (using multithreading, yay!)
+    """
+
+
+    def multi_scrape_html(href):
+        try:
+            print(f"Scraping post: {href}")
+            scraper_results = scraper.scrape(href, wait_for_selector=config['post_body_selector'])
+            return dict(
+                href=href,
+                html=scraper_results['html'],
+                final_url=scraper_results['final_url'],
+            )
+        except urllib.error.HTTPError:  # TODO: Do something analogous for Selenium. Probably in several places.
+            return None
+        except urllib.error.URLError:
+            return None
+
+
+    with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
+        scraped_toc_links = list(filter(
+            lambda x: x is not None,
+            thread_pool.map(multi_scrape_html, map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
+        ))
+
+    # Record the TOC pages into included_scraped_urls
+    for link in scraped_toc_links:
+        mark_url_included(link['final_url'])
+
+    """
+    for each scraped_link, add [href -> final_url] to the pile o' redirects
+    """
+    for link in scraped_toc_links:
+        if link['href'] != link['final_url']:
+            print(f"Redirected from {link['href']} to {link['final_url']}")
+        redirects[link['href']] = link['final_url']
+
+    """
+    map the final urls to chapter numbers
+    """
+    final_url_to_id = {}
+    for (chapter_index, link) in enumerate(scraped_toc_links):
+        final_url_to_id[link['final_url']] = 'chap' + str(chapter_index + 1)
+
+    # TODO: Flesh this out to handle all the cases
+    # def final_url_to_hash_id(url):
+    #     if url == config['toc_url']:
+    #         return toc_element['id']
+    #     return # TODO chapter ids, subsection ids
+
+    """
+    assemble the posts (with metadata)
+    eg dict(final_url=..., title_soup=..., body_soups=)
+
+    for each scraped link, parse its content and extract the title/body
+    """
+    posts = []
+    for link in scraped_toc_links:
+        print(f"Parsing post: {link['final_url']}")
+        parsed_post = parse_post(link['html'])
+        parsed_post['final_url'] = link['final_url']
+        posts.append(parsed_post)
+
+
+
 elif config['crawl_mode'] == 'incremental':
-    """
-    [stuff TODO]
-    """
-
-    # config['first_post_url'] = 'https://parahumans.wordpress.com/2012/04/21/sentinel-9-6/' # DEBUG
-
     # base_url is used for joining relative urls and comparisons in many places
     base_url = config['first_post_url']
     posts = []
