@@ -14,12 +14,15 @@ def convert_ebook(config, book_base_name, output_format):
         '--cover', os.path.join(os.path.dirname(__file__), "blank_cover_1x1.png"),
     ]
     if config['book_title']:
-        convert_args += ['--title', f"\"{config['book_title']}\""]
+        convert_args += ['--title', config['book_title']]
     if config['book_author']:
-        convert_args += ['--authors', f"\"{config['book_author']}\""]
+        convert_args += ['--authors', config['book_author']]
+    if config['convert_options']:
+        convert_args += config['convert_options']
 
+    print(' '.join(convert_args))
     run_command(convert_args)
-    subprocess.run(convert_args)
+    # subprocess.run(convert_args)
     print('Done converting.')
 
 def run_command(command):

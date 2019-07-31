@@ -14,6 +14,8 @@ def read_config(filename):
         config_py_path = 'blog_configs.' + filename_without_ext
         rewrite_post = importlib.import_module(config_py_path, 'rewrite_post').rewrite_post
         config['rewrite_post'] = rewrite_post
+        rewrite_toc = importlib.import_module(config_py_path, 'rewrite_toc').rewrite_toc
+        config['rewrite_toc'] = rewrite_toc
     except Exception as e:
         pass
 

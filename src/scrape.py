@@ -175,6 +175,9 @@ if config['crawl_mode'] == 'toc':
     soup = BeautifulSoup(toc_scrape_result['html'], 'html.parser')
     toc_element = soup.select(config['toc_selector'])[0]
 
+    if config['rewrite_toc']:
+        toc_element = config['rewrite_toc'](toc_element)
+
     def is_post_link(tag, post_url_pattern=None):
         if tag.attrs['href'] is None:
             return False
@@ -192,8 +195,8 @@ if config['crawl_mode'] == 'toc':
         filter(lambda l: is_post_link(l, config['post_url_pattern']), toc_element.select('a[href]'))
     ))
 
-    if config['reverse_order']:
-        toc_links = reversed(toc_links)
+    if config['toc_reverse_order']:
+        toc_links = list(reversed(toc_links))
 
     if DEBUG:
         toc_links = toc_links[:DEBUG_POST_LIMIT]
@@ -259,10 +262,17 @@ if config['crawl_mode'] == 'toc':
     """
     posts = []
     for link in scraped_toc_links:
-        print(f"Parsing post: {link['final_url']}")
-        parsed_post = parse_post(link['html'])
-        parsed_post['final_url'] = link['final_url']
-        posts.append(parsed_post)
+        try:
+            print(f"Parsing post: {link['final_url']}")
+            parsed_post = parse_post(link['html'])
+            parsed_post['final_url'] = link['final_url']
+            posts.append(parsed_post)
+        except Exception as e:
+            print("Error scraping link:", link['final_url'])
+            print(e)
+            pass
+        # TODO: Maybe catch exception for trying to read off-site pages
+        #   Also why is it scraping off-site pages anyway?
 
 elif config['crawl_mode'] == 'nested_archive':
     base_url = config['toc_url']
@@ -581,21 +591,21 @@ if config['scrape_images']:
         images_by_src[full_src].append(element)
 
     ## Multi-scraping images currently disabled because of a python segfault (??)
-    # def multi_scrape_image(image_scraper, src):
-    #     try:
-    #         print(f"Scraping image: {src}")
-    #         scraper_results = image_scraper.scrape(src)
-    #         return dict(
-    #             src=src,
-    #             data=scraper_results['html'],
-    #             response=scraper_results['response'],
-    #         )
-    #     except urllib.error.HTTPError:
-    #         print(f"HTTP error on {src}")
-    #         return None
-    #     except urllib.error.URLError:
-    #         print(f"URL error on {src}")
-    #         return None
+    def multi_scrape_image(image_scraper, src):
+        try:
+            print(f"Scraping image: {src}")
+            scraper_results = image_scraper.scrape(src)
+            return dict(
+                src=src,
+                data=scraper_results['html'],
+                response=scraper_results['response'],
+            )
+        except urllib.error.HTTPError:
+            print(f"HTTP error on {src}")
+            return None
+        except urllib.error.URLError:
+            print(f"URL error on {src}")
+            return None
     #
     # with multiprocessing.Pool(max(1, min(len(images_by_src), max_threads))) as thread_pool:
     #     scraped_images = list(filter(lambda x: x is not None, map(
@@ -706,4 +716,5 @@ book_file.write(book_html.encode('utf-8'))
 print("Done.")
 
 if args.format:
-    convert_ebook(config, book_base_name, args.format)
+    for format in args.format.split(','):
+        convert_ebook(config, book_base_name, format)
