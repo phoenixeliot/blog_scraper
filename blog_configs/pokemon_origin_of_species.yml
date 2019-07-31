@@ -1,0 +1,12 @@
+book_title: 'Pokemon: Origin of Species'
+book_author: 'Daystar Eld'
+crawl_mode: 'toc'
+toc_url: 'http://daystareld.com/pokemon/'
+toc_selector: 'article .entry-content'
+toc_keep_original_formatting: true
+post_title_selector: '.entry-title'
+post_body_selector: '.entry-content'
+scrape_images: true
+external_link_symbol: '↗︎︎'
+scraped_linked_local_pages: true
+#scraped_linked_local_pages: false

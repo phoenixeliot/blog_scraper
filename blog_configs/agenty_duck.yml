@@ -1,3 +1,5 @@
+book_title: 'Agenty Duck'
+book_author: 'Brienne Yudkowsky'
 scraper_engine: 'selenium'
 crawl_mode: 'toc'
 toc_url: 'http://agentyduck.blogspot.com'

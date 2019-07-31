@@ -1,5 +1,7 @@
 # This file won't work, it just includes all the flags you can use
 
+book_title: 'Ward'
+book_author: 'wildbow'
 crawl_mode: 'toc' # or 'incremental'
 scraper_engine: 'selenium' # or omit this setting
 toc_url: 'https://www.parahumans.net/table-of-contents/'

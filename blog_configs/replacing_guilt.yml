@@ -1,3 +1,5 @@
+book_title: 'Replacing Guilt (Minding Our Way)'
+book_author: 'Nate Soares'
 crawl_mode: 'toc'
 scraper_engine: 'selenium'
 toc_url: 'http://mindingourway.com/guilt/'

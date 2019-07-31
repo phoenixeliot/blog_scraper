@@ -1,3 +1,5 @@
+book_title: 'Sinceriously'
+book_author: 'Ziz'
 crawl_mode: 'toc'
 toc_url: 'https://sinceriously.fyi/'
 toc_selector: '#recent-posts-2'
@@ -7,3 +9,4 @@ post_title_selector: '.entry-title'
 post_body_selector: '.entry-content'
 #post_url_pattern:
 scrape_images: false
+#external_link_symbol: '↗︎︎'

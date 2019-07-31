@@ -1,3 +1,5 @@
+book_title: 'Meaningness'
+book_author: 'David Chapman'
 crawl_mode: 'toc'
 toc_url: 'https://meaningness.com/'
 toc_selector: '.book-toc'
@@ -7,3 +9,4 @@ post_body_selector: '.node-content'
 scrape_images: false
 external_link_symbol: '↗︎︎'
 scraped_linked_local_pages: true
+#scraped_linked_local_pages: false
