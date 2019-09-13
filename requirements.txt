@@ -1,3 +1,4 @@
 uritools
 pyyaml
 selenium
+beautifulsoup4

@@ -22,7 +22,7 @@ argParser.add_argument('config_filename', metavar='config', type=str,
                        help="Name (without path) of the .yml config file for the blog you're scraping")
 argParser.add_argument('-f', '--format', metavar="format", type=str,
                        help="output format (eg, epub or mobi; anything calibre's ebook-convert supports)")
-args = argParser.parse_args()
+args = argParser.parse_known_args()[0]
 
 config = read_config(args.config_filename)
 
@@ -152,10 +152,11 @@ if config['scraper_engine'] == 'selenium':
 else:
     scraper = FetchScraper()
     image_scraper = FetchScraper()
-    max_threads = 10
+    # max_threads = 10
+    max_threads = 1
 
 DEBUG = False
-DEBUG_POST_LIMIT = 3
+DEBUG_POST_LIMIT = 5
 
 if config['crawl_mode'] == 'toc':
     base_url = config['toc_url']
@@ -694,6 +695,8 @@ book_html = f"""
     </body>
 </html>
 """
+
+book_html = BeautifulSoup(book_html, 'html.parser').prettify()
 
 print(f"{len(posts)} posts scraped and assembled.")
 """

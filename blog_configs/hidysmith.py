@@ -11,8 +11,9 @@ def rewrite_post(post):
             element['style'] = ''
 
 def rewrite_toc(toc):
+    return toc  # I think something in this is breaking BeautifulSoup's find stuff
     years = toc.select('p')
-    lines_by_year = list(map(lambda year: re.findall('<br/?>.*?</a>', str(year)), years))
+    lines_by_year = list(map(lambda year: re.findall(re.compile('<br */?>.*?</ *a>', flags=re.DOTALL), str(year)), years))
     lines = [line for lines in lines_by_year for line in lines]
     sorted_lines = sorted(lines, key=lambda line: int(re.search('\\d+', line)[0]))
 
