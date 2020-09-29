@@ -10,3 +10,4 @@ post_body_selector: '.entry-content'
 #post_url_pattern:
 scrape_images: false
 #external_link_symbol: '↗︎︎'
+scraper_engine: 'selenium'
