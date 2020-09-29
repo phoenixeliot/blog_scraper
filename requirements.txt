@@ -2,3 +2,4 @@ uritools
 pyyaml
 selenium
 beautifulsoup4
+pylint

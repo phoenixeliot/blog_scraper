@@ -4,7 +4,7 @@ import subprocess
 
 filenames = os.listdir(os.path.realpath(os.path.join(
     os.path.dirname(__file__), f"../blog_configs")))
-yml_filenames = list(filter(lambda f: re.match('^[^_].*\.yml', f), filenames))
+yml_filenames = list(filter(lambda f: re.match('^[^_].*\\.yml', f), filenames))
 
 
 def run_command(command, log_filename):

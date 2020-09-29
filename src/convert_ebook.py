@@ -1,10 +1,16 @@
+"""
+Converts HTML to ebook files.
+"""
 import os
 import subprocess
 
-from read_config import read_config
+from src.read_config import read_config
 
 
 def convert_ebook(config, book_base_name, output_format):
+    """
+    Given a config and names, generates the epub and mobi files
+    """
     print('Converting...')
     convert_args = [
         '/Applications/calibre.app/Contents/MacOS/ebook-convert',
