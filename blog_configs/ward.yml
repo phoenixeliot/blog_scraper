@@ -1,5 +1,5 @@
 book_title: 'Ward'
-book_author: 'wildbow'
+book_author: 'Wildbow'
 crawl_mode: 'incremental'
 scraper_engine: 'selenium'
 first_post_url: 'https://www.parahumans.net/2017/10/21/glow-worm-0-1/'

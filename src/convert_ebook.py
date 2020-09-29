@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from src.read_config import read_config
+from read_config import read_config
 
 
 def convert_ebook(config, book_base_name, output_format):
@@ -9,11 +9,13 @@ def convert_ebook(config, book_base_name, output_format):
     convert_args = [
         '/Applications/calibre.app/Contents/MacOS/ebook-convert',
         # f'"{os.path.realpath(os.path.join(os.path.dirname(__file__), f"../books/{book_base_name}.html"))}"',
-        os.path.realpath(os.path.join(os.path.dirname(__file__), f"../books/{book_base_name}.html")),
+        os.path.realpath(os.path.join(os.path.dirname(
+            __file__), f"../books/{book_base_name}.html")),
         # f'"{os.path.realpath(os.path.join(os.path.dirname(__file__), f"../books/{book_base_name}.{output_format}"))}"',
-        os.path.realpath(os.path.join(os.path.dirname(__file__), f"../books/{book_base_name}.{output_format}")),
+        os.path.realpath(os.path.join(os.path.dirname(
+            __file__), f"../books/{book_base_name}.{output_format}")),
         '--max-toc-links', '194',
-        '--cover', f'"{os.path.join(os.path.dirname(__file__), "blank_cover_1x1.png")}"',
+        '--cover', f'{os.path.join(os.path.dirname(__file__), "blank_cover_1x1.png")}',
     ]
     if config['book_title']:
         convert_args += ['--title', f'"{config["book_title"]}"']
@@ -27,6 +29,7 @@ def convert_ebook(config, book_base_name, output_format):
     # subprocess.run(convert_args)
     print('Done converting.')
 
+
 def run_command(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE)
     while True:
@@ -37,6 +40,7 @@ def run_command(command):
             print('  ' + output.strip())
     rc = process.poll()
     return rc
+
 
 if __name__ == '__main__':
     convert_ebook(read_config('ward.yml'), 'ward', 'mobi')

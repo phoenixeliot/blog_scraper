@@ -1,0 +1,20 @@
+book_title: 'Pact'
+book_author: 'Wildbow'
+# crawl_mode: 'toc'
+# toc_url: 'https://pactwebserial.wordpress.com/table-of-contents/'
+# toc_keep_original_formatting: true # Set to false to regenerate the TOC based on the links
+# toc_selector: '.entry-content'
+crawl_mode: 'incremental'
+first_post_url: 'https://pactwebserial.wordpress.com/2013/12/17/bonds-1-1/'
+scraper_engine: 'selenium' # or nothing
+post_url_pattern: '.*/\d+/\d+/\d+/.+'
+post_title_selector: '.entry-title'
+post_body_selector: '.entry-content'
+scrape_images: true
+blacklist_selector: '.sharedaddy'
+external_link_symbol: '↗︎︎'
+blacklist_texts:
+  - 'About'
+  - 'Next Chapter'
+  - 'Last Chapter'
+  - 'Previous Chapter' # Yes, it uses both, hah

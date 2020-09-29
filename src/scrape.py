@@ -4,13 +4,14 @@ import os
 import re
 import urllib.error
 from collections import defaultdict
+from urllib.parse import urlparse
 
 import uritools
 from bs4 import BeautifulSoup
 
-from src.convert_ebook import convert_ebook
-from src.read_config import read_config
-from src.scraper_engines import SeleniumScraper, FetchScraper
+from convert_ebook import convert_ebook
+from read_config import read_config
+from scraper_engines import SeleniumScraper, FetchScraper
 import argparse
 
 
@@ -61,6 +62,7 @@ Set up the link piles
 # NOTE: Implicit in this is the notion that if we've scraped a URL, it WILL be a key in this object. TODO: Perhaps make an explicit object for that instead.
 redirects = {}
 
+
 def get_redirect(url):
     # simple case: it's already in the dict
     url = absolute_from_relative_url(url)
@@ -77,7 +79,8 @@ def get_redirect(url):
     # Try fixing http/https to match the TOC
     url_parts = uritools.urisplit(url)
     base_url_parts = uritools.urisplit(redirects[base_url])
-    fixed_scheme_url = uritools.uriunsplit(list(base_url_parts)[:1] + list(url_parts)[1:])
+    fixed_scheme_url = uritools.uriunsplit(
+        list(base_url_parts)[:1] + list(url_parts)[1:])
     if fixed_scheme_url in redirects:
         return redirects[fixed_scheme_url]
 
@@ -85,9 +88,11 @@ def get_redirect(url):
     if url_parts.host == base_url_parts.host:
         try:
             print(f"Scraping url for get_redirect: {url}")
-            scraper_result = scraper.scrape(url, wait_for_selector=config['post_body_selector'])
+            scraper_result = scraper.scrape(
+                url, wait_for_selector=config['post_body_selector'])
             redirects[url] = scraper_result['final_url']
-            return redirects[url]  # TODO: Make store this scraped result in the book as well?
+            # TODO: Make store this scraped result in the book as well?
+            return redirects[url]
         except urllib.error.HTTPError:
             return url  # TODO: Could return '' or something but for now leaving it seems fine
         except urllib.error.URLError:
@@ -96,14 +101,18 @@ def get_redirect(url):
 
     return url
 
+
 # list of URLs that have been scraped and will be included in the resulting book (always defragmented)
 included_scraped_urls = set([])
+
 
 def url_is_included(url):
     return uritools.uridefrag(url).uri in included_scraped_urls
 
+
 def mark_url_included(url):
     included_scraped_urls.add(uritools.uridefrag(url).uri)
+
 
 # list of link tags in the TOC
 # eg dict(source_url=..., href=...)
@@ -116,8 +125,10 @@ post_links = []
 # list of all elements with ids
 elements_with_ids = []
 
+
 def absolute_from_relative_url(url):
     return uritools.urijoin(base_url, url)
+
 
 def parse_post(html):
     page_soup = BeautifulSoup(html, 'html.parser')
@@ -128,19 +139,23 @@ def parse_post(html):
         body_soups=body_soups,
     )
 
+
 """
 Helper functions for iterating over all posts or css-selections from posts
 """
+
 
 def post_body_soups_iter():
     for post in posts:
         for body_soup in post['body_soups']:
             yield body_soup
 
+
 def post_select_iter(selector):
     for body_soup in post_body_soups_iter():
         for element in body_soup.select(selector):
             yield (post, element)
+
 
 """
 Set up the scraper engine
@@ -158,6 +173,7 @@ else:
 DEBUG = False
 DEBUG_POST_LIMIT = 5
 
+
 if config['crawl_mode'] == 'toc':
     base_url = config['toc_url']
     """
@@ -167,10 +183,12 @@ if config['crawl_mode'] == 'toc':
 
     expand_toc_js = config['toc_js']
     print(f"Scraping table of contents: {config['toc_url']}")
-    toc_scrape_result = scraper.scrape(config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
+    toc_scrape_result = scraper.scrape(
+        config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
 
     # Record the scrape results in included_scraped_urls and redirects
-    included_scraped_urls.add(uritools.uridefrag(toc_scrape_result['final_url']).uri)
+    included_scraped_urls.add(uritools.uridefrag(
+        toc_scrape_result['final_url']).uri)
     redirects[config['toc_url']] = toc_scrape_result['final_url']
 
     soup = BeautifulSoup(toc_scrape_result['html'], 'html.parser')
@@ -193,7 +211,8 @@ if config['crawl_mode'] == 'toc':
             tag=tag,
             source_url=config['toc_url'],
         ),
-        filter(lambda l: is_post_link(l, config['post_url_pattern']), toc_element.select('a[href]'))
+        filter(lambda l: is_post_link(
+            l, config['post_url_pattern']), toc_element.select('a[href]'))
     ))
 
     if config['toc_reverse_order']:
@@ -214,20 +233,23 @@ if config['crawl_mode'] == 'toc':
     def multi_scrape_html(href):
         try:
             print(f"Scraping post: {href}")
-            scraper_results = scraper.scrape(href, wait_for_selector=config['post_body_selector'])
+            scraper_results = scraper.scrape(
+                href, wait_for_selector=config['post_body_selector'])
             return dict(
                 href=href,
                 html=scraper_results['html'],
                 final_url=scraper_results['final_url'],
             )
-        except urllib.error.HTTPError:  # TODO: Do something analogous for Selenium. Probably in several places.
+        # TODO: Do something analogous for Selenium. Probably in several places.
+        except urllib.error.HTTPError:
             return None
         except urllib.error.URLError:
             return None
     with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
         scraped_toc_links = list(filter(
             lambda x: x is not None,
-            thread_pool.map(multi_scrape_html, map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
+            thread_pool.map(multi_scrape_html, map(
+                lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
         ))
 
     # Record the TOC pages into included_scraped_urls
@@ -284,17 +306,16 @@ elif config['crawl_mode'] == 'nested_archive':
 
     expand_toc_js = config['toc_js']
     print(f"Scraping archive chunks: {config['toc_url']}")
-    toc_scrape_result = scraper.scrape(config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
+    toc_scrape_result = scraper.scrape(
+        config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
 
     # Record the scrape results in included_scraped_urls and redirects
-    included_scraped_urls.add(uritools.uridefrag(toc_scrape_result['final_url']).uri)
+    included_scraped_urls.add(uritools.uridefrag(
+        toc_scrape_result['final_url']).uri)
     redirects[config['toc_url']] = toc_scrape_result['final_url']
 
     soup = BeautifulSoup(toc_scrape_result['html'], 'html.parser')
     toc_element = soup.select(config['toc_selector'])[0]
-
-
-
 
     def is_post_link(tag, post_url_pattern=None):
         if tag.attrs['href'] is None:
@@ -305,13 +326,13 @@ elif config['crawl_mode'] == 'nested_archive':
             return True
         return re.match(post_url_pattern, tag.attrs['href']) is not None
 
-
     toc_links = list(map(
         lambda tag: dict(
             tag=tag,
             source_url=config['toc_url'],
         ),
-        filter(lambda l: is_post_link(l, config['post_url_pattern']), toc_element.select('a[href]'))
+        filter(lambda l: is_post_link(
+            l, config['post_url_pattern']), toc_element.select('a[href]'))
     ))
 
     if config['reverse_order']:
@@ -329,26 +350,27 @@ elif config['crawl_mode'] == 'nested_archive':
     Scrape all the pages that the TOC links to (using multithreading, yay!)
     """
 
-
     def multi_scrape_html(href):
         try:
             print(f"Scraping post: {href}")
-            scraper_results = scraper.scrape(href, wait_for_selector=config['post_body_selector'])
+            scraper_results = scraper.scrape(
+                href, wait_for_selector=config['post_body_selector'])
             return dict(
                 href=href,
                 html=scraper_results['html'],
                 final_url=scraper_results['final_url'],
             )
-        except urllib.error.HTTPError:  # TODO: Do something analogous for Selenium. Probably in several places.
+        # TODO: Do something analogous for Selenium. Probably in several places.
+        except urllib.error.HTTPError:
             return None
         except urllib.error.URLError:
             return None
 
-
     with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
         scraped_toc_links = list(filter(
             lambda x: x is not None,
-            thread_pool.map(multi_scrape_html, map(lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
+            thread_pool.map(multi_scrape_html, map(
+                lambda l: absolute_from_relative_url(l['tag']['href']), toc_links))
         ))
 
     # Record the TOC pages into included_scraped_urls
@@ -390,7 +412,6 @@ elif config['crawl_mode'] == 'nested_archive':
         posts.append(parsed_post)
 
 
-
 elif config['crawl_mode'] == 'incremental':
     # base_url is used for joining relative urls and comparisons in many places
     base_url = config['first_post_url']
@@ -409,10 +430,12 @@ elif config['crawl_mode'] == 'incremental':
         post_url = next_post_url
         next_post_url = None
         print(f"Scraping post: {post_url}")
-        scrape_result = scraper.scrape(post_url, wait_for_selector=config['post_selector'])
+        scrape_result = scraper.scrape(
+            post_url, wait_for_selector=config['post_selector'])
 
         # Record the scrape results in included_scraped_urls and redirects
-        included_scraped_urls.add(uritools.uridefrag(scrape_result['final_url']).uri)
+        included_scraped_urls.add(
+            uritools.uridefrag(scrape_result['final_url']).uri)
         redirects[post_url] = scrape_result['final_url']
 
         """
@@ -431,8 +454,8 @@ elif config['crawl_mode'] == 'incremental':
         """
         link_tags = post['body_soups'][0].select('a')
         for link_tag in link_tags:
-            if 'Next Chapter' in link_tag.text:
-                next_post_url = link_tag['href']
+            if 'Next' in link_tag.text:
+                next_post_url = absolute_from_relative_url(link_tag['href'])
                 break
 
     """
@@ -449,6 +472,8 @@ else:
 """
 filter title/body/blacklisted things/etc
 """
+
+
 def filter_post(post):
     for body_soup in post['body_soups']:
         if config['blacklist_selector']:
@@ -459,6 +484,7 @@ def filter_post(post):
             for tag in body_soup.select('a[href]'):
                 if tag.text.strip() in config['blacklist_texts']:
                     tag.decompose()
+
 
 for post in posts:
     print(f"Filtering post: {post['final_url']}")
@@ -482,7 +508,8 @@ if config['scraped_linked_local_pages']:
         for post in posts:
             for body_soup in post['body_soups']:
                 for element in body_soup.select('[href]'):
-                    full_href = uritools.urijoin(post['final_url'], element['href'])
+                    full_href = uritools.urijoin(
+                        post['final_url'], element['href'])
                     defragged_href = uritools.uridefrag(full_href).uri
 
                     if not url_is_included(defragged_href):
@@ -490,7 +517,8 @@ if config['scraped_linked_local_pages']:
                         base_url_parts = uritools.urisplit(redirects[base_url])
                         if href_parts.host == base_url_parts.host:  # Never try to include linked pages from other domains
                             if defragged_href not in extra_page_urls:
-                                extra_page_urls.append(defragged_href)  # TODO: defragged, or full? Uniqueness or is the fragment important?
+                                # TODO: defragged, or full? Uniqueness or is the fragment important?
+                                extra_page_urls.append(defragged_href)
         return extra_page_urls
 
     extra_page_urls = find_linked_extras(posts)
@@ -500,7 +528,8 @@ if config['scraped_linked_local_pages']:
         print("Scraping a batch of extras:")
         print('\n'.join(extra_page_urls))
         with multiprocessing.Pool(max(1, min(len(posts), max_threads))) as thread_pool:
-            scraped_extra_pages = list(filter(lambda x: x is not None, thread_pool.map(multi_scrape_html, extra_page_urls)))
+            scraped_extra_pages = list(filter(
+                lambda x: x is not None, thread_pool.map(multi_scrape_html, extra_page_urls)))
 
         extra_pages = []
         # extra_pages = list(map(lambda scraped: parse_post(scraped['html']), scraped_extra_pages))
@@ -516,11 +545,13 @@ if config['scraped_linked_local_pages']:
 
                 redirects[scrape_result['href']] = scrape_result['final_url']
                 mark_url_included(scrape_result['final_url'])
-                final_url_to_id[scrape_result['final_url']] = 'extra' + str(extra_count)  # TODO: Fragment might matter here (see above TODO)
+                # TODO: Fragment might matter here (see above TODO)
+                final_url_to_id[scrape_result['final_url']
+                                ] = 'extra' + str(extra_count)
                 extra_count += 1
             except:
-                pass  # TODO: Handle if a page links to an image for some reason (Meaningness does this somewhere)
-
+                # TODO: Handle if a page links to an image for some reason (Meaningness does this somewhere)
+                pass
 
         posts += extra_pages  # TODO: Consider cleanup by keeping these separate
         extra_page_urls = find_linked_extras(extra_pages)
@@ -529,7 +560,8 @@ if config['scraped_linked_local_pages']:
 grant ids to each post via their title element
 """
 for post in posts:
-    print(f"Adding id to chapter: {post['final_url']} id={final_url_to_id[post['final_url']]}")
+    print(
+        f"Adding id to chapter: {post['final_url']} id={final_url_to_id[post['final_url']]}")
     post['title_soup']['id'] = final_url_to_id[post['final_url']]
 
 """
@@ -564,10 +596,12 @@ for (post, element) in post_select_iter('[href]'):
         # TODO: Display a warning if subsection ID can't be found. We're currently assuming they line up. Should point to just the chapter if broken.
         if subsection_id:
             final_href = chap_id + '_' + subsection_id
-            print(f"Replacing an internal subsection link: {full_href} {final_href}")
+            print(
+                f"Replacing an internal subsection link: {full_href} {final_href}")
         else:
             final_href = chap_id
-            print(f"Replacing an internal chapter link: {full_href} {final_href}")
+            print(
+                f"Replacing an internal chapter link: {full_href} {final_href}")
         element['href'] = final_href
 
 """
@@ -580,7 +614,8 @@ if config['external_link_symbol']:
         final_url = get_redirect(full_href)
         if not url_is_included(final_url):
             print(f"Marking link as external: {final_url}")
-            element.string = (element.string or '') + config['external_link_symbol']
+            element.string = (element.string or '') + \
+                config['external_link_symbol']
 
 """
 Scrape external images and replace their src's with base64 encoded versions
@@ -591,7 +626,7 @@ if config['scrape_images']:
         full_src = uritools.urijoin(post['final_url'], element['src'])
         images_by_src[full_src].append(element)
 
-    ## Multi-scraping images currently disabled because of a python segfault (??)
+    # Multi-scraping images currently disabled because of a python segfault (??)
     def multi_scrape_image(image_scraper, src):
         try:
             print(f"Scraping image: {src}")
@@ -642,7 +677,8 @@ if config['scrape_images']:
                         content_type = content_type_candidate
                         break
                 else:
-                    print(f"Skipped image with unknown content type: {scraped_image['src']}")
+                    print(
+                        f"Skipped image with unknown content type: {scraped_image['src']}")
                     continue  # Skip this image if we don't know its encoding
             if content_type == 'image/svg+xml':
                 print(f"Inlining an image as svg: {image_tag['src']}")
@@ -653,7 +689,8 @@ if config['scrape_images']:
                 # image_tag.replace_with(svg_tag)
             else:
                 print(f"Inlining an image as base64: {image_tag['src']}")
-                encoded_image = base64.b64encode(scraped_image['data']).decode('ascii')
+                encoded_image = base64.b64encode(
+                    scraped_image['data']).decode('ascii')
                 image_tag['src'] = f"data:{content_type};base64,{encoded_image}"
 
 # """
@@ -675,10 +712,13 @@ if config['toc_keep_original_formatting']:
     toc_result_html = str(toc_element)
 else:
     if config['crawl_mode'] == 'toc':
-        toc_result_html = '<h1 id="toc">Table of Contents</h1>' + '<br>'.join(map(lambda link: str(link['tag']), toc_links))
+        toc_result_html = '<h1 id="toc">Table of Contents</h1>' + \
+            '<br>'.join(map(lambda link: str(link['tag']), toc_links))
     elif config['crawl_mode'] == 'incremental':
-        toc_link_from_post = lambda post: f"<a href=\"#{final_url_to_id[post['final_url']]}\">{post['title_soup'].text}</a>"
-        toc_result_html = '<h1 id="toc">Table of Contents</h1>' + '<br>'.join(map(toc_link_from_post, posts))
+        def toc_link_from_post(
+            post): return f"<a href=\"#{final_url_to_id[post['final_url']]}\">{post['title_soup'].text}</a>"
+        toc_result_html = '<h1 id="toc">Table of Contents</h1>' + \
+            '<br>'.join(map(toc_link_from_post, posts))
 book_html += toc_result_html
 for post in posts:
     book_html += str(post['title_soup'])
@@ -705,10 +745,12 @@ Write out the file
 
 print("Writing file")
 
+
 def ensure_dir(file_path):
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
         os.makedirs(directory)
+
 
 book_base_name = os.path.splitext(args.config_filename)[0]
 books_folder = os.path.join(os.path.dirname(__file__), '../books')

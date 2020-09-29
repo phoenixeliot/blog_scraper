@@ -1,3 +1,5 @@
+book_title: 'Worm'
+book_author: 'Wildbow'
 crawl_mode: 'incremental'
 scraper_engine: 'selenium' # or nothing
 first_post_url: 'https://parahumans.wordpress.com/2011/06/11/1-1/'
