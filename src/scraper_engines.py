@@ -8,6 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
 
+
 def encode_url(url):
     parts = list(uritools.urisplit(url))
     for i in [2, 3, 4]:
@@ -15,12 +16,14 @@ def encode_url(url):
             parts[i] = urllib.parse.quote(parts[i])  # path
     return uritools.uriunsplit(parts)
 
+
 class FetchScraper():
     def scrape(self, url, **kwargs):
         url = encode_url(url)
         try:
             # TODO: Rewrite to match the other's rewrite
-            request = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'})
+            request = urllib.request.Request(
+                url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'})
             response = urllib.request.urlopen(request)
             html = response.read()
             return dict(
@@ -34,6 +37,7 @@ class FetchScraper():
         except urllib.error.URLError as e:
             print("Couldn't scrape URL " + url, e)
             raise e
+
 
 class SeleniumScraper():
     def __init__(self, options={}):
@@ -59,7 +63,8 @@ class SeleniumScraper():
         # TODO: Modularize this; this is specific to Agenty Duck
         if wait_for_selector:
             try:
-                WebDriverWait(self.driver, 5).until(expected_conditions.presence_of_element_located((By.CSS_SELECTOR, wait_for_selector)))
+                WebDriverWait(self.driver, 5).until(
+                    expected_conditions.presence_of_element_located((By.CSS_SELECTOR, wait_for_selector)))
             except selenium.common.exceptions.TimeoutException as e:
                 pass
                 print()
