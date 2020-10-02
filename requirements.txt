@@ -3,3 +3,4 @@ pyyaml
 selenium
 beautifulsoup4
 pylint
+requests

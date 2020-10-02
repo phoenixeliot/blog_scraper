@@ -1,8 +1,9 @@
 import time
 import urllib.request
 import urllib.error
-import uritools
 import ssl
+import requests
+import uritools
 import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -24,12 +25,13 @@ class FetchScraper():
         print(f"Fetching with urllib: {url}")
         try:
             # TODO: Rewrite to match the other's rewrite
-            request = urllib.request.Request(
-                url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'})
-            response = urllib.request.urlopen(request)
-            html = response.read()
+            # request = urllib.request.Request(
+            #     url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'})
+            # response = urllib.request.urlopen(request, timeout=15)
+            # html = response.read()
+            response = requests.get(url, timeout=15)
             return dict(
-                html=html,
+                html=response.content,
                 final_url=response.url,  # TODO: test this on any site that has redirects
                 response=response,
             )
@@ -53,7 +55,7 @@ class SeleniumScraper():
         try:
             self.driver.quit()
         except Exception as e:
-            # print("Failed to quit Selenium:", e)
+            print("Failed to quit Selenium:", e)
             pass
 
     def scrape(self, url, wait_for_selector=None, js=None):
