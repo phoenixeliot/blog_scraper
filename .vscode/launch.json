@@ -1,0 +1,177 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Scrape All",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape_all_blogs.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Agenty Duck",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "agenty_duck.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
+      "name": "Hidysmith",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "hidysmith.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
+      "name": "Meaningness",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "meaningness.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
+      "name": "Pact",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "pact.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
+      "name": "Pokemon: OoS",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "pokemon_origin_of_species.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
+      "name": "Replacing Guilt",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "replacing_guilt.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
+      "name": "Sinceriously",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "sinceriously.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
+      "name": "Twig",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "twig.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
+      "name": "Ward",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "ward.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
+      "name": "Worm",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "worm.yml",
+        "--format=epub,mobi"
+      ]
+    },
+  ]
+}

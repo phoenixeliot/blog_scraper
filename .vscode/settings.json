@@ -1,0 +1,7 @@
+{
+  "python.linting.pylintEnabled": true,
+  "python.linting.enabled": true,
+  "python.linting.pylintPath": "venv/bin/pylint",
+  "python.pythonPath": "venv/bin/python3.6",
+  "html.format.enable": false
+}
