@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+from multiprocessing import Process
 
 filenames = os.listdir(os.path.realpath(os.path.join(
     os.path.dirname(__file__), f"../blog_configs")))
@@ -23,13 +24,14 @@ def run_command(command, log_filename):
         return rc
 
 
+processes = []
 for yml_filename in yml_filenames:
     filename_root = yml_filename.replace('.yml', '')
     # config_name = re.match('(.*)\.yml', yml_filename)[1]
 
     scrape_args = [
         'python3',
-        os.path.join(os.path.dirname(__file__), f"scrape.py"),
+        os.path.join(os.path.dirname(__file__), "scrape.py"),
         yml_filename,
         '--format=epub,mobi',
     ]

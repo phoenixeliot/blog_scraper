@@ -7,11 +7,11 @@ def rewrite_post(post):
             element['style'] = 'width: 1em'
     for soup in post['body_soups']:
         for link in soup.select('a[href]'):
-            if link['href'].startsWith('pactwebserial.wordpress'):
+            if link['href'].startswith('pactwebserial.wordpress'):
                 link['href'] = 'https://' + link['href']
 
 
 def rewrite_toc(toc):
     for link in toc.select('a[href]'):
-        if link['href'].startsWith('pactwebserial.wordpress'):
+        if link['href'].startswith('pactwebserial.wordpress'):
             link['href'] = 'https://' + link['href']

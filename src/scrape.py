@@ -1,8 +1,10 @@
 import base64
 import multiprocessing
+import sys
 import os
 import re
 import urllib.error
+import ssl
 from collections import defaultdict
 from urllib.parse import urlparse
 
@@ -14,6 +16,8 @@ from read_config import read_config
 from scraper_engines import SeleniumScraper, FetchScraper
 import argparse
 
+DEBUG = False
+DEBUG_POST_LIMIT = 5
 
 """
 Parse command line arguments to fetch the config data
@@ -26,6 +30,10 @@ argParser.add_argument('-f', '--format', metavar="format", type=str,
 args = argParser.parse_known_args()[0]
 
 config = read_config(args.config_filename)
+
+if config['disabled']:
+    print(f"{args.config_filename} is disabled. Skipping.")
+    sys.exit(os.EX_OK)
 
 """
 things that need mapping for link replacement:
@@ -93,10 +101,8 @@ def get_redirect(url):
             redirects[url] = scraper_result['final_url']
             # TODO: Make store this scraped result in the book as well?
             return redirects[url]
-        except urllib.error.HTTPError:
+        except (urllib.error.URLError, ssl.SSLError):
             return url  # TODO: Could return '' or something but for now leaving it seems fine
-        except urllib.error.URLError:
-            return url
     # else, couldn't find it, so leave it alone.
 
     return url
@@ -170,9 +176,6 @@ else:
     # max_threads = 10
     max_threads = 1
 
-DEBUG = False
-DEBUG_POST_LIMIT = 5
-
 
 if config['crawl_mode'] == 'toc':
     base_url = config['toc_url']
@@ -241,9 +244,7 @@ if config['crawl_mode'] == 'toc':
                 final_url=scraper_results['final_url'],
             )
         # TODO: Do something analogous for Selenium. Probably in several places.
-        except urllib.error.HTTPError:
-            return None
-        except urllib.error.URLError:
+        except (urllib.error.URLError, ssl.SSLError):
             return None
     with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
         scraped_toc_links = list(filter(
@@ -361,9 +362,7 @@ elif config['crawl_mode'] == 'nested_archive':
                 final_url=scraper_results['final_url'],
             )
         # TODO: Do something analogous for Selenium. Probably in several places.
-        except urllib.error.HTTPError:
-            return None
-        except urllib.error.URLError:
+        except (urllib.error.URLError, ssl.SSLError):
             return None
 
     with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
@@ -636,11 +635,8 @@ if config['scrape_images']:
                 data=scraper_results['html'],
                 response=scraper_results['response'],
             )
-        except urllib.error.HTTPError:
-            print(f"HTTP error on {src}")
-            return None
-        except urllib.error.URLError:
-            print(f"URL error on {src}")
+        except (urllib.error.URLError, ssl.SSLError):
+            print(f"Network error on {src}")
             return None
     #
     # with multiprocessing.Pool(max(1, min(len(images_by_src), max_threads))) as thread_pool:
@@ -736,7 +732,7 @@ book_html = f"""
 </html>
 """
 
-book_html = BeautifulSoup(book_html, 'html.parser').prettify()
+book_html = BeautifulSoup(book_html, 'html.parser')
 
 print(f"{len(posts)} posts scraped and assembled.")
 """

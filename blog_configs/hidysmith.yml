@@ -1,8 +1,9 @@
+disabled: true
 book_title: 'Hidysmith.com'
 book_author: 'Bryce Hidysmith'
 crawl_mode: 'toc'
 scraper_engine: 'selenium'
-toc_url: 'http://www.hidysmith.com/archive/'
+toc_url: 'https://web.archive.org/web/20200223024712/http://www.hidysmith.com/archive/'
 toc_keep_original_formatting: true
 toc_selector: '#mainContent'
 post_title_selector: '.entry-title' # element that contains the title

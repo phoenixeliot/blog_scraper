@@ -2,6 +2,7 @@ import time
 import urllib.request
 import urllib.error
 import uritools
+import ssl
 import selenium.common.exceptions
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -20,6 +21,7 @@ def encode_url(url):
 class FetchScraper():
     def scrape(self, url, **kwargs):
         url = encode_url(url)
+        print(f"Fetching with urllib: {url}")
         try:
             # TODO: Rewrite to match the other's rewrite
             request = urllib.request.Request(
@@ -31,12 +33,9 @@ class FetchScraper():
                 final_url=response.url,  # TODO: test this on any site that has redirects
                 response=response,
             )
-        except urllib.error.HTTPError as e:
-            print("Couldn't scrape URL " + url, e)
-            raise e
-        except urllib.error.URLError as e:
-            print("Couldn't scrape URL " + url, e)
-            raise e
+        except (urllib.error.URLError, ssl.SSLError) as ex:
+            print("Couldn't scrape URL " + url, ex)
+            raise ex
 
 
 class SeleniumScraper():
@@ -58,14 +57,14 @@ class SeleniumScraper():
             pass
 
     def scrape(self, url, wait_for_selector=None, js=None):
-        # print("Scraping " + url)
+        print(f"Fetching with Selenium: {url}")
         self.driver.get(url)
         # TODO: Modularize this; this is specific to Agenty Duck
         if wait_for_selector:
             try:
                 WebDriverWait(self.driver, 5).until(
                     expected_conditions.presence_of_element_located((By.CSS_SELECTOR, wait_for_selector)))
-            except selenium.common.exceptions.TimeoutException as e:
+            except selenium.common.exceptions.TimeoutException:
                 pass
                 print()
         if js:
