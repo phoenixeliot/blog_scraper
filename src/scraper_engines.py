@@ -24,11 +24,6 @@ class FetchScraper():
         url = encode_url(url)
         print(f"Fetching with urllib: {url}")
         try:
-            # TODO: Rewrite to match the other's rewrite
-            # request = urllib.request.Request(
-            #     url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'})
-            # response = urllib.request.urlopen(request, timeout=15)
-            # html = response.read()
             response = requests.get(url, timeout=15)
             return dict(
                 html=response.content,
