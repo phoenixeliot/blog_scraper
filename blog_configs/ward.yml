@@ -1,7 +1,7 @@
 book_title: 'Ward'
 book_author: 'Wildbow'
-crawl_mode: 'incremental'
-scraper_engine: 'selenium'
+crawl_mode: 'incremental' # The TOC is a little broken
+scraper_engine: 'selenium' # wordpress does things like replace anything with "@" with "[email filtered]" unless we use selenium
 first_post_url: 'https://www.parahumans.net/2017/10/21/glow-worm-0-1/'
 post_url_pattern: '.*/\d+/\d+/\d+/.+'
 post_title_selector: '.entry-title'

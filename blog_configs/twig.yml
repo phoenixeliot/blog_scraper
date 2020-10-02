@@ -1,12 +1,8 @@
 book_title: 'Twig'
 book_author: 'Wildbow'
-# crawl_mode: 'toc'
-# toc_url: 'https://pactwebserial.wordpress.com/table-of-contents/'
-# toc_keep_original_formatting: true # Set to false to regenerate the TOC based on the links
-# toc_selector: '.entry-content'
-crawl_mode: 'incremental'
+crawl_mode: 'incremental' # The TOC is a little broken
+scraper_engine: 'selenium' # wordpress does things like replace anything with "@" with "[email filtered]" unless we use selenium
 first_post_url: 'https://twigserial.wordpress.com/2014/12/24/taking-root-1-1/'
-scraper_engine: 'selenium' # or nothing
 post_url_pattern: '.*/\d+/\d+/\d+/.+'
 post_title_selector: '.entry-title'
 post_body_selector: '.entry-content'
