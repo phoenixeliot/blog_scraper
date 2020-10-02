@@ -22,7 +22,7 @@ def encode_url(url):
 class FetchScraper():
     def scrape(self, url, **kwargs):
         url = encode_url(url)
-        print(f"Fetching with urllib: {url}")
+        print(f"Fetching with requests: {url}")
         try:
             response = requests.get(url, timeout=15)
             return dict(

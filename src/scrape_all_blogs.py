@@ -39,5 +39,11 @@ for yml_filename in yml_filenames:
 
     # TODO: Have scrape.py log its own things so scraping individual blogs does this right
     log_filename = os.path.realpath(os.path.join(
-        os.path.dirname(__file__), f"../logs", f'{filename_root}.log'))
+        os.path.dirname(__file__), "../logs", f'{filename_root}.log'))
     run_command(scrape_args, log_filename)
+#     p = Process(target=run_command, args=(scrape_args, log_filename))
+#     p.start()
+#     processes.append(p)
+
+# for p in processes:
+#     p.join()
