@@ -34,3 +34,5 @@ The yml config files may get out of date when websites change their layout. Feel
 ## Misc notes
 
 worm_editor.rb is a script I wrote to go with worm_scraper.rb which I took from [here](https://github.com/TheBrain0110/worm_scraper). I intend to clean this repo up and remove that old code, but haven't yet.
+
+worm_edited and ward_edited have some automatic copyediting applied that fix some common annoyances, like not using em-dashes, incorrect spacing, or incorrect direction quote marks.
