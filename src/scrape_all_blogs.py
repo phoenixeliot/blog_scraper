@@ -1,3 +1,13 @@
+"""
+This runs the scraper using all of the blog config files,
+producing html, epub, and mobi files for all of them.
+
+Takes no arguments.
+
+This may hang on blogs that have broken configs.
+I would run it all in parallel, but Selenium seems to get overloaded if I do that
+and result in higher failure rates.
+"""
 import os
 import re
 import subprocess

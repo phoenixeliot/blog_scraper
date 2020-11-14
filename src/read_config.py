@@ -9,7 +9,7 @@ def read_config(filename):
     path = os.path.realpath(os.path.join(
         os.path.dirname(__file__), '../blog_configs', filename))
     config = defaultdict(lambda: None, yaml.load(
-        open(path, encoding='utf-8').read()))  # , Loader=yaml.FullLoader))
+        open(path, encoding='utf-8').read(), Loader=yaml.FullLoader))
 
     filename_without_ext = os.path.splitext(filename)[0]
 

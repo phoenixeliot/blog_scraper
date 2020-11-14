@@ -1,3 +1,10 @@
+"""
+This does the majority of the scraping work.
+It's a bit monolithic atm; splitting it up more will be good.
+
+Run it like so:
+python src/scrape.py worm.yml --format=epub,mobi
+"""
 import base64
 import multiprocessing
 import sys
@@ -11,9 +18,14 @@ from urllib.parse import urlparse
 import uritools
 from bs4 import BeautifulSoup
 
-from convert_ebook import convert_ebook
-from read_config import read_config
-from scraper_engines import SeleniumScraper, FetchScraper
+# Hack to fix relative imports, per https://stackoverflow.com/a/16985066/8869677
+PACKAGE_PARENT = '..'
+SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.expanduser(__file__))))
+sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
+
+from src.convert_ebook import convert_ebook
+from src.read_config import read_config
+from src.scraper_engines import SeleniumScraper, FetchScraper
 import argparse
 
 DEBUG = False
