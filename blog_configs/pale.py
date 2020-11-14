@@ -9,6 +9,12 @@ def rewrite_post(post):
         for link in soup.select('a[href]'):
             if link['href'].startswith('palewebserial.wordpress'):
                 link['href'] = 'https://' + link['href']
+        for item in soup.select('p'):
+            if item.get_text() == "Previous Chapter":
+                item.decompose()
+        for item in soup.select('h1'):
+            if item.next_sibling.name == 'hr':
+                item.next_sibling.decompose()
 
 
 def rewrite_toc(toc):

@@ -12,7 +12,6 @@ def read_config(filename):
         open(path, encoding='utf-8').read(), Loader=yaml.FullLoader))
 
     filename_without_ext = os.path.splitext(filename)[0]
-
     config_py_path = 'blog_configs.' + filename_without_ext
 
     try:

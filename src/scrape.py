@@ -174,6 +174,19 @@ def post_select_iter(selector):
         for element in body_soup.select(selector):
             yield (post, element)
 
+def multi_scrape_html(href):
+    try:
+        print(f"Scraping post: {href}")
+        scraper_results = scraper.scrape(
+            href, wait_for_selector=config['post_body_selector'])
+        return dict(
+            href=href,
+            html=scraper_results['html'],
+            final_url=scraper_results['final_url'],
+        )
+    # TODO: Do something analogous for Selenium. Probably in several places.
+    except (urllib.error.URLError, ssl.SSLError):
+        return None
 
 """
 Set up the scraper engine
@@ -245,19 +258,7 @@ if config['crawl_mode'] == 'toc':
     Scrape all the pages that the TOC links to (using multithreading, yay!)
     """
 
-    def multi_scrape_html(href):
-        try:
-            print(f"Scraping post: {href}")
-            scraper_results = scraper.scrape(
-                href, wait_for_selector=config['post_body_selector'])
-            return dict(
-                href=href,
-                html=scraper_results['html'],
-                final_url=scraper_results['final_url'],
-            )
-        # TODO: Do something analogous for Selenium. Probably in several places.
-        except (urllib.error.URLError, ssl.SSLError):
-            return None
+
     with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
         scraped_toc_links = list(filter(
             lambda x: x is not None,
@@ -362,21 +363,6 @@ elif config['crawl_mode'] == 'nested_archive':
     """
     Scrape all the pages that the TOC links to (using multithreading, yay!)
     """
-
-    def multi_scrape_html(href):
-        try:
-            print(f"Scraping post: {href}")
-            scraper_results = scraper.scrape(
-                href, wait_for_selector=config['post_body_selector'])
-            return dict(
-                href=href,
-                html=scraper_results['html'],
-                final_url=scraper_results['final_url'],
-            )
-        # TODO: Do something analogous for Selenium. Probably in several places.
-        except (urllib.error.URLError, ssl.SSLError):
-            return None
-
     with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
         scraped_toc_links = list(filter(
             lambda x: x is not None,

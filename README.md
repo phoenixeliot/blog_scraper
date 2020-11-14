@@ -1,6 +1,7 @@
 # Generalized blog / web serial scraper
 
-I couldn't find a good ebook/kindle version of worm, the fantastic web serial by wildbow (John McCrae), so I decided to make one. You can now enjoy worm without all of the eye strain! Until wildbow gets this thing published, this is the next best option.
+This converts blogs into ebooks, by scraping them with Selenium.
+
 
 [Please support the author!](http://parahumans.wordpress.com/donate/)
 
