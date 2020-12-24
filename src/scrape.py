@@ -440,7 +440,7 @@ elif config['crawl_mode'] == 'incremental':
         """
         post = parse_post(scrape_result['html'])
         if config['rewrite_post']:
-            config['rewrite_post'](post)
+            config['rewrite_post'](post, config)
         post['final_url'] = scrape_result['final_url']
 
         posts.append(post)
@@ -493,7 +493,7 @@ If a custom rewrite_post is provided, run it now
 if config['rewrite_post']:
     for post in posts:
         print(f"Running config.rewrite_post: {post['final_url']}")
-        config['rewrite_post'](post)
+        config['rewrite_post'](post, config)
 
 """
 Scrape pages not found in the TOC but linked by other pages (if they're on the same domain)
@@ -536,7 +536,7 @@ if config['scraped_linked_local_pages']:
                 # TODO: Encapsulate all the stuff we do with new pages into one function (it's copied above as well for non-extras)
                 filter_post(extra_page)
                 if config['rewrite_post']:
-                    config['rewrite_post'](extra_page)
+                    config['rewrite_post'](extra_page, config)
                 extra_page['final_url'] = scrape_result['final_url']
                 extra_pages.append(extra_page)
 
