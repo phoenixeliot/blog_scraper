@@ -156,6 +156,7 @@ def parse_post(html):
     title_soup = page_soup.select(config['post_title_selector'])[0]
     body_soups = page_soup.select(config['post_body_selector'])
     return dict(
+        page_soup=page_soup,
         title_soup=title_soup,
         body_soups=body_soups,
     )
@@ -457,11 +458,19 @@ elif config['crawl_mode'] == 'incremental':
         Find the link to the next post for the next iteration
         NOTE: Depends on this happening *before* filter_post (so the link is still there)
         """
-        link_tags = post['body_soups'][0].select('a')
-        for link_tag in link_tags:
-            if 'Next' in link_tag.text:
-                next_post_url = absolute_from_relative_url(link_tag['href'])
+        if config['next_link_selector']:
+            link_selection = post['page_soup'].select(config['next_link_selector'])
+            if len(link_selection) == 0:
+                next_post_url = None
                 break
+            link_tag = link_selection[0]
+            next_post_url = absolute_from_relative_url(link_tag['href'])
+        else:
+            link_tags = post['body_soups'][0].select('a')
+            for link_tag in link_tags:
+                if 'Next' in link_tag.text:
+                    next_post_url = absolute_from_relative_url(link_tag['href'])
+                    break
 
     """
     map the final urls to chapter numbers
@@ -722,15 +731,18 @@ if config['scrape_images']:
                 # Massage tall images to fit into one page correctly
                 image_tag['src'] = image_path
                 image_tag['style'] = "max-height: 700px; max-width: 500px; object-fit: contain; margin: 0; padding: 0;"
-                if int(image_tag['height']) > 200:
+                if int(image_tag.get('height', 0)) > 200:
                     soup = BeautifulSoup()
                     wrap_div = soup.new_tag('div')
                     wrap_div['style'] = "page-break-inside: avoid; page-break-before: always; margin: 0; padding: 0;"
                     image_tag.wrap(wrap_div)
 
-                del image_tag['srcset']
-                del image_tag['width']
-                del image_tag['height']
+                if 'srcset' in image_tag:
+                    del image_tag['srcset']
+                if 'width' in image_tag:
+                    del image_tag['width']
+                if 'height' in image_tag:
+                    del image_tag['height']
                 # print(f"Inlining an image as base64: {image_tag['src']}")
                 # encoded_image = base64.b64encode(
                 #     scraped_image['data']).decode('ascii')

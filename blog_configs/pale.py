@@ -11,10 +11,12 @@ def rewrite_post(post, config):
         for el in list(soup.strings):
             if isinstance(el, NavigableString):
                 if "🟂" in str(el):
-                    # el.replace_with(str(el).replace('🟂', '⏅'))
                     if 'style' not in el.parent.attrs:
                         el.parent.attrs['style'] = ''
-                    el.parent.attrs['style'] += ';font-family: "Noto Sans Symbols 2", serif;'
+                    # el.parent.attrs['style'] += ';font-family: "Noto Sans Symbols 2", serif;'
+                    el.parent.attrs['style'] += ';font-size: 150%;'
+
+                    el.replace_with(str(el).replace('🟂', '◬'))
 
         for link in soup.select('a[href]'):
             if link['href'].startswith('palewebserial.wordpress'):
