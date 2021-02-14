@@ -29,7 +29,7 @@ from src.scraper_engines import SeleniumScraper, FetchScraper
 import argparse
 
 DEBUG = False
-DEBUG_POST_LIMIT = 5
+DEBUG_POST_LIMIT = 15
 
 """
 Parse command line arguments to fetch the config data
@@ -188,6 +188,12 @@ def multi_scrape_html(href):
     except (urllib.error.URLError, ssl.SSLError):
         return None
 
+def remove_blacklisted_selectors(body_soup):
+    if config['blacklist_selector']:
+        for tag in body_soup.select(config['blacklist_selector']):
+            print(f"Removing blacklisted item by selector ({config['blacklist_selector']}): \"{tag.text.strip()}\"")
+            tag.decompose()
+
 """
 Set up the scraper engine
 """
@@ -221,6 +227,8 @@ if config['crawl_mode'] == 'toc':
 
     soup = BeautifulSoup(toc_scrape_result['html'], 'html.parser')
     toc_element = soup.select(config['toc_selector'])[0]
+
+    remove_blacklisted_selectors(toc_element)
 
     if config['rewrite_toc']:
         toc_element = config['rewrite_toc'](toc_element)
@@ -428,7 +436,7 @@ elif config['crawl_mode'] == 'incremental':
         next_post_url = None
         print(f"Scraping post: {post_url}")
         scrape_result = scraper.scrape(
-            post_url, wait_for_selector=config['post_selector'])
+            post_url, wait_for_selector=config['post_selector'], js=config['post_js'])
 
         # Record the scrape results in included_scraped_urls and redirects
         included_scraped_urls.add(
@@ -473,13 +481,12 @@ filter title/body/blacklisted things/etc
 
 def filter_post(post):
     for body_soup in post['body_soups']:
-        if config['blacklist_selector']:
-            for tag in body_soup.select(config['blacklist_selector']):
-                tag.decompose()
+        remove_blacklisted_selectors(body_soup)
         if config['blacklist_texts']:
             # TODO: Clean up this hack for Ward/Worm. Assumes we only care about <a>'s.
             for tag in body_soup.select('a[href]'):
                 if tag.text.strip() in config['blacklist_texts']:
+                    print(f"Removing blacklisted text: \"{tag.text.strip()}\"")
                     tag.decompose()
 
 

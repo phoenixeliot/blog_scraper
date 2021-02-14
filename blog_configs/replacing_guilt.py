@@ -1,7 +1,7 @@
 import re
 
 
-def rewrite_post(post):
+def rewrite_post(post, config):
     for soup in post['body_soups']:
         for element in soup.select('[href]'):
             if re.match('\w+\.(com|org)', element['href']):

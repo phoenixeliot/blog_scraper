@@ -1,0 +1,16 @@
+book_title: 'MCTB2 (Mastering the Core Teachings of the Buddha, Online Version)'
+book_author: 'Daniel M. Ingram'
+scraper_engine: 'selenium'
+crawl_mode: 'toc'
+toc_url: 'https://www.mctb.org/mctb2/table-of-contents/'
+toc_keep_original_formatting: true
+toc_selector: '.page-section'
+#toc_js: 'document.querySelector(".page-section > :first-child").remove(); document.querySelector(".page-section > :last-child").remove()'
+#post_js: 'document.querySelector(".page-section > p:first-child").remove(); document.querySelector(".page-section > p:last-child").remove()'
+post_url_pattern: 'https://www.mctb.org/mctb2/.*'
+post_title_selector: '.headline h1'
+post_body_selector: '.page-section'
+scrape_images: true
+#scraped_linked_local_pages: true
+blacklist_selector: '.page-section > p:first-child, .page-section > p:last-child'
+#scraped_linked_local_pages: false

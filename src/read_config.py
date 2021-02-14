@@ -4,6 +4,8 @@ from collections import defaultdict
 import yaml
 import importlib
 
+def noop(post, *args):
+    return post
 
 def read_config(filename):
     path = os.path.realpath(os.path.join(
@@ -18,12 +20,12 @@ def read_config(filename):
         config['rewrite_post'] = importlib.import_module(
             config_py_path, 'rewrite_post').rewrite_post
     except (ModuleNotFoundError, AttributeError):
-        config['rewrite_post'] = lambda x: x
+        config['rewrite_post'] = noop
 
     try:
         config['rewrite_toc'] = importlib.import_module(
             config_py_path, 'rewrite_toc').rewrite_toc
     except (ModuleNotFoundError, AttributeError):
-        config['rewrite_toc'] = lambda x: x
+        config['rewrite_toc'] = noop
 
     return config

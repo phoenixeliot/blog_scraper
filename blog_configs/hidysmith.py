@@ -3,7 +3,7 @@ import re
 from bs4 import BeautifulSoup
 
 
-def rewrite_post(post):
+def rewrite_post(post, config):
     for soup in post['body_soups']:
         for element in soup.select('.image-block-wrapper'):
             element['style'] = ''
