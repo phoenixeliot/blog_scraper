@@ -7,12 +7,14 @@ python src/scrape.py worm.yml --format=epub,mobi
 """
 import base64
 import multiprocessing
+import shutil
 import sys
 import os
 import re
 import urllib.error
 import ssl
 from collections import defaultdict
+from pathlib import Path
 from urllib.parse import urlparse
 
 import uritools
@@ -82,6 +84,7 @@ Set up the link piles
 # NOTE: Implicit in this is the notion that if we've scraped a URL, it WILL be a key in this object. TODO: Perhaps make an explicit object for that instead.
 redirects = {}
 
+image_folder = args.config_filename.replace('.yml', '')
 
 def get_redirect(url):
     # simple case: it's already in the dict
@@ -221,8 +224,7 @@ if config['crawl_mode'] == 'toc':
         config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
 
     # Record the scrape results in included_scraped_urls and redirects
-    included_scraped_urls.add(uritools.uridefrag(
-        toc_scrape_result['final_url']).uri)
+    mark_url_included(toc_scrape_result['final_url'])
     redirects[config['toc_url']] = toc_scrape_result['final_url']
 
     soup = BeautifulSoup(toc_scrape_result['html'], 'html.parser')
@@ -332,8 +334,7 @@ elif config['crawl_mode'] == 'nested_archive':
         config['toc_url'], wait_for_selector=config['toc_selector'], js=expand_toc_js)
 
     # Record the scrape results in included_scraped_urls and redirects
-    included_scraped_urls.add(uritools.uridefrag(
-        toc_scrape_result['final_url']).uri)
+    mark_url_included(toc_scrape_result['final_url'])
     redirects[config['toc_url']] = toc_scrape_result['final_url']
 
     soup = BeautifulSoup(toc_scrape_result['html'], 'html.parser')
@@ -439,8 +440,7 @@ elif config['crawl_mode'] == 'incremental':
             post_url, wait_for_selector=config['post_selector'], js=config['post_js'])
 
         # Record the scrape results in included_scraped_urls and redirects
-        included_scraped_urls.add(
-            uritools.uridefrag(scrape_result['final_url']).uri)
+        mark_url_included(scrape_result['final_url'])
         redirects[post_url] = scrape_result['final_url']
 
         """
@@ -484,10 +484,15 @@ def filter_post(post):
         remove_blacklisted_selectors(body_soup)
         if config['blacklist_texts']:
             # TODO: Clean up this hack for Ward/Worm. Assumes we only care about <a>'s.
-            for tag in body_soup.select('a[href]'):
+            for tag in body_soup.find_all():
                 if tag.text.strip() in config['blacklist_texts']:
                     print(f"Removing blacklisted text: \"{tag.text.strip()}\"")
+                    parent = tag.parent
                     tag.decompose()
+                    while parent.text.strip() == '':
+                        current = parent
+                        parent = current.parent
+                        current.decompose()
 
 
 for post in posts:
@@ -497,7 +502,7 @@ for post in posts:
 """
 If a custom rewrite_post is provided, run it now
 """
-if config['rewrite_post']:
+if config['rewrite_post']: # TODO: Try to make this not run twice? Though running it twice might be necessary for some current hacks...
     for post in posts:
         print(f"Running config.rewrite_post: {post['final_url']}")
         config['rewrite_post'](post, config)
@@ -553,8 +558,10 @@ if config['scraped_linked_local_pages']:
                 final_url_to_id[scrape_result['final_url']
                                 ] = 'extra' + str(extra_count)
                 extra_count += 1
-            except:
+            except Exception as e:
                 # TODO: Handle if a page links to an image for some reason (Meaningness does this somewhere)
+                print("Error scraping and formatting extra page")
+                print(e)
                 pass
 
         posts += extra_pages  # TODO: Consider cleanup by keeping these separate
@@ -633,11 +640,21 @@ if config['scrape_images']:
     # Multi-scraping images currently disabled because of a python segfault (??)
     def multi_scrape_image(image_scraper, src):
         try:
+            image_filename = urlparse(src).path.split('/')[-1]
+            image_path = f'{image_folder}/{image_filename}'
+            absolute_image_path = os.path.join(os.path.dirname(__file__), '..', 'books', image_path)
+
+            if os.path.exists(absolute_image_path):
+                print("Image already downloaded, skipping:", image_path)
+                return dict(
+                    src=src,
+                    response=None,
+                )
+
             print(f"Scraping image: {src}")
-            scraper_results = image_scraper.scrape(src)
+            scraper_results = image_scraper.scrape(src, stream=True)
             return dict(
                 src=src,
-                data=scraper_results['html'],
                 response=scraper_results['response'],
             )
         except (urllib.error.URLError, ssl.SSLError):
@@ -659,6 +676,19 @@ if config['scrape_images']:
 
     # Record the TOC pages into included_scraped_urls
     for scraped_image in scraped_images:
+        image_filename = urlparse(scraped_image['src']).path.split('/')[-1]
+        image_path = f'{image_folder}/{image_filename}'
+        absolute_folder_path = os.path.join(os.path.dirname(__file__), '..', 'books', image_folder)
+        absolute_image_path = os.path.join(os.path.dirname(__file__), '..', 'books', image_path)
+
+        if scraped_image['response'] is not None:  # It's not cached # TODO: Distinguish from Selenium requests here that don't have a response object
+            if scraped_image['response'].status_code != 200:
+                print()
+            Path(absolute_folder_path).mkdir(exist_ok=True)
+            with open(absolute_image_path, 'wb') as image_file:
+                scraped_image['response'].raw.decode_content = True
+                shutil.copyfileobj(scraped_image['response'].raw, image_file)
+
         for image_tag in images_by_src[scraped_image['src']]:
             print(f"Processing image: {image_tag['src']}")
             # TODO: Don't redundantly re-encode images used multiple times in the book
@@ -681,18 +711,30 @@ if config['scrape_images']:
                     print(
                         f"Skipped image with unknown content type: {scraped_image['src']}")
                     continue  # Skip this image if we don't know its encoding
-            if content_type == 'image/svg+xml':
+            if False and content_type == 'image/svg+xml':  # TODO: Verify this still works after the below changes; or, save it as a file too.
                 print(f"Inlining an image as svg: {image_tag['src']}")
-                encoded_image = scraped_image['data'].decode('ascii')
+                encoded_image = scraped_image['response'].content.decode('ascii')
                 image_tag['src'] = f"data:{content_type};utf8,{encoded_image}"
                 # svg_tag = BeautifulSoup(encoded_image, 'html.parser')
                 # svg_tag.attrs = image_tag.attrs
                 # image_tag.replace_with(svg_tag)
             else:
-                print(f"Inlining an image as base64: {image_tag['src']}")
-                encoded_image = base64.b64encode(
-                    scraped_image['data']).decode('ascii')
-                image_tag['src'] = f"data:{content_type};base64,{encoded_image}"
+                # Massage tall images to fit into one page correctly
+                image_tag['src'] = image_path
+                image_tag['style'] = "max-height: 700px; max-width: 500px; object-fit: contain; margin: 0; padding: 0;"
+                if int(image_tag['height']) > 200:
+                    soup = BeautifulSoup()
+                    wrap_div = soup.new_tag('div')
+                    wrap_div['style'] = "page-break-inside: avoid; page-break-before: always; margin: 0; padding: 0;"
+                    image_tag.wrap(wrap_div)
+
+                del image_tag['srcset']
+                del image_tag['width']
+                del image_tag['height']
+                # print(f"Inlining an image as base64: {image_tag['src']}")
+                # encoded_image = base64.b64encode(
+                #     scraped_image['data']).decode('ascii')
+                # image_tag['src'] = f"data:{content_type};base64,{encoded_image}"
 
 # """
 # Update image src's to be full URLs
@@ -731,6 +773,12 @@ book_html = f"""
     <head>
         <meta charset="UTF-8">
     </head>
+    <style>
+    @font-face {{
+        font-family: "Noto Sans Symbols 2";
+        src: url("fonts/NotoSansSymbols2-Regular.ttf") format("truetype");
+    }}
+    </style>
     <body>
         {book_html}
     </body>
