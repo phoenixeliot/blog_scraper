@@ -10,6 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
 
+
 def encode_url(url):
     parts = list(uritools.urisplit(url))
     for i in [2, 3, 4]:
@@ -18,7 +19,7 @@ def encode_url(url):
     return uritools.uriunsplit(parts)
 
 
-class FetchScraper():
+class FetchScraper:
     def scrape(self, url, stream=False, **kwargs):
         # url = encode_url(url) # TODO: Figure out what needs this; it breaks WP width encoding
         print(f"Fetching with requests: {url}")
@@ -29,14 +30,14 @@ class FetchScraper():
                 response=response,
             )
             if not stream:
-                result['html'] = response.content
+                result["html"] = response.content
             return result
         except (urllib.error.URLError, ssl.SSLError) as ex:
             print("Couldn't scrape URL " + url, ex)
             raise ex
 
 
-class SeleniumScraper():
+class SeleniumScraper:
     def __init__(self, options={}):
         driver_options = webdriver.ChromeOptions()
         driver_options.headless = True
@@ -61,14 +62,19 @@ class SeleniumScraper():
         if wait_for_selector:
             try:
                 WebDriverWait(self.driver, 5).until(
-                    expected_conditions.presence_of_element_located((By.CSS_SELECTOR, wait_for_selector)))
+                    expected_conditions.presence_of_element_located(
+                        (By.CSS_SELECTOR, wait_for_selector)
+                    )
+                )
             except selenium.common.exceptions.TimeoutException as e:
                 pass
-                print(f"WARNING: TimeoutException while trying to load URL: {url}. Selector was never found: {wait_for_selector}")
+                print(
+                    f"WARNING: TimeoutException while trying to load URL: {url}. Selector was never found: {wait_for_selector}"
+                )
         if js:
             self.driver.execute_script(js)
             time.sleep(5)
-        html = self.driver.page_source.encode('utf-8').strip()
+        html = self.driver.page_source.encode("utf-8").strip()
         return dict(
             html=html,
             final_url=self.driver.current_url,
