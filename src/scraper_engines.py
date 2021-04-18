@@ -10,7 +10,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
 
-
 def encode_url(url):
     parts = list(uritools.urisplit(url))
     for i in [2, 3, 4]:
@@ -63,9 +62,9 @@ class SeleniumScraper():
             try:
                 WebDriverWait(self.driver, 5).until(
                     expected_conditions.presence_of_element_located((By.CSS_SELECTOR, wait_for_selector)))
-            except selenium.common.exceptions.TimeoutException:
+            except selenium.common.exceptions.TimeoutException as e:
                 pass
-                print()
+                print(f"WARNING: TimeoutException while trying to load URL: {url}. Selector was never found: {wait_for_selector}")
         if js:
             self.driver.execute_script(js)
             time.sleep(5)

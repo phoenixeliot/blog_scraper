@@ -1,9 +1,13 @@
+import os
 from bs4 import BeautifulSoup, NavigableString
+
+with open(os.path.join(os.path.dirname(__file__), 'pale', '🟂.svg')) as f:
+    threePointedStarSVG = f.read()
 
 def rewrite_post(post, config):
     first_p = post['body_soups'][0].find('p')
     if len(first_p.text.strip()) == 0 and first_p.find('img') is None:
-        first_p.decompose()
+        first_p.decompose() # TODO: probably remove, not used anymore I think
     for soup in post['body_soups']:
         for element in soup.select('.emoji'):
             element['style'] = 'width: 1em'
@@ -11,12 +15,8 @@ def rewrite_post(post, config):
         for el in list(soup.strings):
             if isinstance(el, NavigableString):
                 if "🟂" in str(el):
-                    if 'style' not in el.parent.attrs:
-                        el.parent.attrs['style'] = ''
-                    # el.parent.attrs['style'] += ';font-family: "Noto Sans Symbols 2", serif;'
-                    el.parent.attrs['style'] += ';font-size: 150%;'
-
-                    el.replace_with(str(el).replace('🟂', '◬'))
+                    star = BeautifulSoup(threePointedStarSVG, 'html.parser')
+                    el.replaceWith(star)
 
         for link in soup.select('a[href]'):
             if link['href'].startswith('palewebserial.wordpress'):
@@ -45,7 +45,6 @@ def rewrite_post(post, config):
                 next_sibling.decompose()
                 break
             next_sibling = next_sibling.next_sibling
-            print()
 
         # # Remove spaces between lead image and the rest
         # next_sibling = soup.find('img').next_sibling
@@ -58,6 +57,7 @@ def rewrite_post(post, config):
         for h1 in h1s:
             h1.name = 'b'
 
+        # If the chapter ends in an <hr> or blank strings, remove them
         last_element = soup.find_all()[-1]
         while last_element.name == 'hr' or (
             isinstance(last_element, NavigableString) and get_text(last_element).strip() == ''
@@ -65,6 +65,19 @@ def rewrite_post(post, config):
             to_del = last_element
             last_element = last_element.previous_element
             to_del.extract()
+
+        # TODO: Disabled, not sure why. Might need fixing?
+        # If there's multiple images in a row, delete any blank paragraphs between them to prevent blank pages on kindle
+        # images = soup.select('img')
+        # for image in images:
+        #     nodes_to_remove = []
+        #     next_sibling = image.next_sibling
+        #     while next_sibling is not None and next_sibling.name != 'img':
+        #         nodes_to_remove.append(next_sibling)
+        #         next_sibling = next_sibling.next_sibling
+        #     if all(map(lambda n: n.encode_contents().strip() == ''), nodes_to_remove):
+        #         for node in nodes_to_remove:
+        #             node.extract()
 
 
 def rewrite_toc(toc):

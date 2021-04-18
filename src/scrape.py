@@ -692,7 +692,7 @@ if config['scrape_images']:
 
         if scraped_image['response'] is not None:  # It's not cached # TODO: Distinguish from Selenium requests here that don't have a response object
             if scraped_image['response'].status_code != 200:
-                print()
+                print(f"WARNING: Failed to scrape image: {scraped_image['src']}, with status code {scraped_image['response'].status_code}")
             Path(absolute_folder_path).mkdir(exist_ok=True)
             with open(absolute_image_path, 'wb') as image_file:
                 scraped_image['response'].raw.decode_content = True

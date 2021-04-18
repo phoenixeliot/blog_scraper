@@ -78,6 +78,22 @@
       ]
     },
     {
+      "name": "Pale",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "pale.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
       "name": "Pokemon: OoS",
       "type": "python",
       "request": "launch",
