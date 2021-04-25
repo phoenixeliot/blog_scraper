@@ -611,11 +611,14 @@ if config["scraped_linked_local_pages"]:
                         href_parts = uritools.urisplit(full_href)
                         base_url_parts = uritools.urisplit(redirects[base_url])
                         if (
-                            href_parts.host == base_url_parts.host
-                        ):  # Never try to include linked pages from other domains
-                            if defragged_href not in extra_page_urls:
-                                # TODO: defragged, or full? Uniqueness or is the fragment important?
-                                extra_page_urls.append(defragged_href)
+                            href_parts.host != base_url_parts.host
+                        ):
+                            # Never try to include linked pages from other domains
+                            continue
+                        if defragged_href in extra_page_urls: # don't duplicate paths
+                            continue
+                        # TODO: defragged, or full? Uniqueness or is the fragment important?
+                        extra_page_urls.append(defragged_href)
         return extra_page_urls
 
     extra_page_urls = find_linked_extras(posts)
@@ -642,6 +645,8 @@ if config["scraped_linked_local_pages"]:
         extra_pages = []
         # extra_pages = list(map(lambda scraped: parse_post(scraped['html']), scraped_extra_pages))
         for scrape_result in scraped_extra_pages:
+            if not config["post_filter"](scrape_result, config): # skip explicitly filtered-out posts
+                continue
             try:
                 extra_page = parse_post(scrape_result["html"])
                 # TODO: Encapsulate all the stuff we do with new pages into one function (it's copied above as well for non-extras)

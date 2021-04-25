@@ -137,7 +137,7 @@
       "envFile": "${workspaceRoot}/venv",
       "console": "integratedTerminal",
       "args": [
-        "not_replacing_guilt.yml",
+        "minding_our_way.yml",
         "--format=epub,mobi"
       ]
     },

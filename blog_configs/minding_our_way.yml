@@ -1,0 +1,11 @@
+book_title: 'Minding Our Way (without Replacing Guilt)'
+book_author: 'Nate Soares'
+crawl_mode: 'incremental'
+scraper_engine: 'selenium'
+first_post_url: 'http://mindingourway.com/on-learning-difficult-things/'
+next_link_selector: '.right.navlink'
+post_title_selector: '.post-title'
+post_body_selector: '.post-content'
+scrape_images: true
+external_link_symbol: '↗︎︎'
+scraped_linked_local_pages: true

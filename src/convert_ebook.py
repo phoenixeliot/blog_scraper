@@ -24,6 +24,8 @@ def convert_ebook(config, book_base_name, output_format):
                 os.path.dirname(__file__), f"../books/{book_base_name}.{output_format}"
             )
         ),
+        "--chapter",
+        "/",
         "--max-toc-links",
         "194",
         "--cover",
