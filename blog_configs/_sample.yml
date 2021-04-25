@@ -2,11 +2,18 @@
 
 book_title: 'Ward'
 book_author: 'wildbow'
-crawl_mode: 'toc' # or 'incremental'
 scraper_engine: 'selenium' # or omit this setting
+crawl_mode: 'toc' # or 'incremental'
+
+# use with incremental crawl_mode
+first_post_url: 'https://pactwebserial.wordpress.com/2013/12/17/bonds-1-1/'
+next_link_selector: '.next' # Selector for 'next chapter' link. Searches for links containing "Next" if omitted
+
+# use with toc crawl_mode
 toc_url: 'https://www.parahumans.net/table-of-contents/'
 toc_keep_original_formatting: true # Set to false to regenerate the TOC based on the links
 toc_selector: '.entry-content'
+
 post_url_pattern: '.*/\d+/\d+/\d+/.+' # omit if all links in the TOC are valid post links
 post_title_selector: '.entry-title' # element that contains the title
 post_body_selector: '.entry-content' # element that contains the post content

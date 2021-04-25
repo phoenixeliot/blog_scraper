@@ -35,4 +35,11 @@ def read_config(filename):
     except (ModuleNotFoundError, AttributeError):
         config["rewrite_toc"] = noop
 
+    try:
+        config["post_filter"] = importlib.import_module(
+            config_py_path, "post_filter"
+        ).post_filter
+    except (ModuleNotFoundError, AttributeError):
+        config["post_filter"] = lambda: True
+
     return config

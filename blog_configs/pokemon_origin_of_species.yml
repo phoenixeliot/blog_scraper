@@ -10,3 +10,4 @@ scrape_images: true
 external_link_symbol: '↗︎︎'
 scraped_linked_local_pages: true
 #scraped_linked_local_pages: false
+blacklist_selector: '.mistape_caption, .navigation'

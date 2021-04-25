@@ -6,11 +6,13 @@ Run it like so:
 python src/scrape.py worm.yml --format=epub,mobi
 """
 import base64
-import multiprocessing
+# import multiprocessing
 import shutil
+# from src.multiprocessing_functions import multi_scrape_extra_pages, multi_scrape_html, multi_scrape_toc_links
 import sys
 import os
 import re
+from typing import Any
 import urllib.error
 import ssl
 from collections import defaultdict
@@ -165,11 +167,12 @@ def absolute_from_relative_url(url):
     return uritools.urijoin(base_url, url)
 
 
-def parse_post(html):
+def parse_post(html) -> dict[str, Any]:
     page_soup = BeautifulSoup(html, "html.parser")
     title_soup = page_soup.select(config["post_title_selector"])[0]
     body_soups = page_soup.select(config["post_body_selector"])
     return dict(
+        final_url="",
         page_soup=page_soup,
         title_soup=title_soup,
         body_soups=body_soups,
@@ -192,8 +195,7 @@ def post_select_iter(selector):
         for element in body_soup.select(selector):
             yield (post, element)
 
-
-def multi_scrape_html(href):
+def scrape_html(href):
     try:
         print(f"Scraping post: {href}")
         scraper_results = scraper.scrape(
@@ -294,19 +296,32 @@ if config["crawl_mode"] == "toc":
     Scrape all the pages that the TOC links to (using multithreading, yay!)
     """
 
-    with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
-        scraped_toc_links = list(
-            filter(
-                lambda x: x is not None,
-                thread_pool.map(
-                    multi_scrape_html,
-                    map(
-                        lambda l: absolute_from_relative_url(l["tag"]["href"]),
-                        toc_links,
-                    ),
+    # scraped_toc_links = multi_scrape_toc_links(toc_links, max_threads, absolute_from_relative_url, config, scraper)
+    scraped_toc_links = list(
+        filter(
+            lambda x: x is not None,
+            map(
+                scrape_html,
+                map(
+                    lambda l: absolute_from_relative_url(l["tag"]["href"]),
+                    toc_links,
                 ),
-            )
+            ),
         )
+    )
+    # with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
+    #     scraped_toc_links = list(
+    #         filter(
+    #             lambda x: x is not None,
+    #             thread_pool.starmap(
+    #                 multi_scrape_html,
+    #                 map(
+    #                     lambda l: (absolute_from_relative_url(l["tag"]["href"]), config, scraper),
+    #                     toc_links,
+    #                 ),
+    #             ),
+    #         )
+    #     )
 
     # Record the TOC pages into included_scraped_urls
     for link in scraped_toc_links:
@@ -409,19 +424,32 @@ elif config["crawl_mode"] == "nested_archive":
     """
     Scrape all the pages that the TOC links to (using multithreading, yay!)
     """
-    with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
-        scraped_toc_links = list(
-            filter(
-                lambda x: x is not None,
-                thread_pool.map(
-                    multi_scrape_html,
-                    map(
-                        lambda l: absolute_from_relative_url(l["tag"]["href"]),
-                        toc_links,
-                    ),
+    scraped_toc_links = list(
+        filter(
+            lambda x: x is not None,
+            map(
+                scrape_html,
+                map(
+                    lambda l: absolute_from_relative_url(l["tag"]["href"]),
+                    toc_links,
                 ),
-            )
+            ),
         )
+    )
+    # scraped_toc_links = multi_scrape_toc_links(toc_links, max_threads, absolute_from_relative_url, config, scraper)
+    # with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
+    #     scraped_toc_links = list(
+    #         filter(
+    #             lambda x: x is not None,
+    #             thread_pool.map(
+    #                 multi_scrape_html,
+    #                 map(
+    #                     lambda l: (absolute_from_relative_url(l["tag"]["href"]), config, scraper),
+    #                     toc_links,
+    #                 ),
+    #             ),
+    #         )
+    #     )
 
     # Record the TOC pages into included_scraped_urls
     for link in scraped_toc_links:
@@ -496,7 +524,10 @@ elif config["crawl_mode"] == "incremental":
             config["rewrite_post"](post, config)
         post["final_url"] = scrape_result["final_url"]
 
-        posts.append(post)
+        if config["post_filter"](post, config):
+            posts.append(post)
+        else:
+            print(f"Skipping filtered post: {post['final_url']}")
 
         """
         Find the link to the next post for the next iteration
@@ -593,13 +624,20 @@ if config["scraped_linked_local_pages"]:
     while len(extra_page_urls) > 0:
         print("Scraping a batch of extras:")
         print("\n".join(extra_page_urls))
-        with multiprocessing.Pool(max(1, min(len(posts), max_threads))) as thread_pool:
-            scraped_extra_pages = list(
-                filter(
-                    lambda x: x is not None,
-                    thread_pool.map(multi_scrape_html, extra_page_urls),
-                )
+        scraped_extra_pages = list(
+            filter(
+                lambda x: x is not None,
+                map(scrape_html, extra_page_urls),
             )
+        )
+        # scraped_extra_pages = multi_scrape_extra_pages(posts, max_threads, config, scraper, extra_page_urls)
+        # with multiprocessing.Pool(max(1, min(len(posts), max_threads))) as thread_pool:
+        #     scraped_extra_pages = list(
+        #         filter(
+        #             lambda x: x is not None,
+        #             thread_pool.starmap(multi_scrape_html, map(lambda url: (url, config, scraper), extra_page_urls)),
+        #         )
+        #     )
 
         extra_pages = []
         # extra_pages = list(map(lambda scraped: parse_post(scraped['html']), scraped_extra_pages))

@@ -126,6 +126,22 @@
       ]
     },
     {
+      "name": "Minding Our Way (without Replacing Guilt)",
+      "type": "python",
+      "request": "launch",
+      "program": "./src/scrape.py",
+      "env": {
+        "PYTHONPATH": "${workspaceRoot}"
+      },
+      "cwd": "${workspaceRoot}",
+      "envFile": "${workspaceRoot}/venv",
+      "console": "integratedTerminal",
+      "args": [
+        "not_replacing_guilt.yml",
+        "--format=epub,mobi"
+      ]
+    },
+    {
       "name": "Sinceriously",
       "type": "python",
       "request": "launch",
