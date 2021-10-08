@@ -18,9 +18,11 @@ import ssl
 from collections import defaultdict
 from pathlib import Path
 from urllib.parse import urlparse
+import requests
 
 import uritools
 from bs4 import BeautifulSoup
+import urllib3
 
 # Hack to fix relative imports, per https://stackoverflow.com/a/16985066/8869677
 PACKAGE_PARENT = ".."
@@ -411,7 +413,7 @@ elif config["crawl_mode"] == "nested_archive":
     )
 
     if config["reverse_order"]:
-        toc_links = reversed(toc_links)
+        toc_links = list(reversed(toc_links))
 
     if DEBUG:
         toc_links = toc_links[:DEBUG_POST_LIMIT]
@@ -760,8 +762,8 @@ if config["scrape_images"]:
                 src=src,
                 response=scraper_results["response"],
             )
-        except (urllib.error.URLError, ssl.SSLError):
-            print(f"Network error on {src}")
+        except Exception:
+            print(f"Exception while scraping image: {src}")
             return None
 
     #
@@ -786,6 +788,8 @@ if config["scrape_images"]:
     # Record the TOC pages into included_scraped_urls
     for scraped_image in scraped_images:
         image_filename = urlparse(scraped_image["src"]).path.split("/")[-1]
+        if image_filename == '':
+            continue
         image_path = f"{image_folder}/{image_filename}"
         absolute_folder_path = os.path.join(
             os.path.dirname(__file__), "..", "books", image_folder

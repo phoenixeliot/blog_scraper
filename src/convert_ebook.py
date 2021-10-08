@@ -26,6 +26,8 @@ def convert_ebook(config, book_base_name, output_format):
         ),
         "--chapter",
         "/",
+        "--page-breaks-before",
+        "//*[name()='h1']", # default is "//*[name()='h1' or name()='h2']"
         "--max-toc-links",
         "194",
         "--cover",

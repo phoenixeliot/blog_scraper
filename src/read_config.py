@@ -40,6 +40,6 @@ def read_config(filename):
             config_py_path, "post_filter"
         ).post_filter
     except (ModuleNotFoundError, AttributeError):
-        config["post_filter"] = lambda: True
+        config["post_filter"] = lambda *args: True
 
     return config

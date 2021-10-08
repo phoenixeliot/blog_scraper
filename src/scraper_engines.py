@@ -1,3 +1,4 @@
+import socket
 import time
 import urllib.request
 import urllib.error
@@ -9,6 +10,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
+import urllib3
 
 
 def encode_url(url):
@@ -32,7 +34,7 @@ class FetchScraper:
             if not stream:
                 result["html"] = response.content
             return result
-        except (urllib.error.URLError, ssl.SSLError) as ex:
+        except Exception as ex:
             print("Couldn't scrape URL " + url, ex)
             raise ex
 
