@@ -278,10 +278,14 @@ if config["crawl_mode"] == "toc":
             ),
             filter(
                 lambda l: is_post_link(l, config["post_url_pattern"]),
-                toc_element.select("a[href]"),
+                toc_element.select(config["toc_link_selector"] or "a[href]"),
             ),
         )
     )
+
+    if len(toc_links) == 0:
+        print("No TOC links found. Exiting.")
+        exit(1)
 
     if config["toc_reverse_order"]:
         toc_links = list(reversed(toc_links))
