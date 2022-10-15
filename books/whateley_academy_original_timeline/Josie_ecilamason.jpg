@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en-gb" dir="ltr">
+<head>
+	<meta charset="utf-8" />
+	<title>Error: 404 Item not found</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<link href="https://fonts.googleapis.com/css?family=Lora" rel="stylesheet" />
+		<style>
+			h1, h2, h3, h4, h5, h6, .site-title {
+				font-family: 'Lora', sans-serif;
+			}
+		</style>
+		<link href="/templates/protostarwu/css/template.css" rel="stylesheet" />
+					<link href="/templates/protostarwu/favicon.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
+				<style>
+			body.site {
+				border-top: 3px solid #0036cc;
+				background-color: #f7f7f8			}
+			a {
+				color: #0036cc;
+			}
+			.navbar-inner, .nav-list > .active > a, .nav-list > .active > a:hover, .dropdown-menu li > a:hover, .dropdown-menu .active > a, .dropdown-menu .active > a:hover, .nav-pills > .active > a, .nav-pills > .active > a:hover {
+				background: #0036cc;
+			}
+			.navbar-inner {
+				-moz-box-shadow: 0 1px 3px rgba(0, 0, 0, .25), inset 0 -1px 0 rgba(0, 0, 0, .1), inset 0 30px 10px rgba(0, 0, 0, .2);
+				-webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, .25), inset 0 -1px 0 rgba(0, 0, 0, .1), inset 0 30px 10px rgba(0, 0, 0, .2);
+				box-shadow: 0 1px 3px rgba(0, 0, 0, .25), inset 0 -1px 0 rgba(0, 0, 0, .1), inset 0 30px 10px rgba(0, 0, 0, .2);
+			}
+		</style>
+		<!--[if lt IE 9]><script src="/media/jui/js/html5.js"></script><![endif]-->
+</head>
+<body class="site com_k2 view-item no-layout no-task itemid-101 fluid">
+	<!-- Body -->
+	<div class="body" id="top">
+		<div class="container-fluid">
+			<!-- Header -->
+			<header class="header" role="banner">
+				<div class="header-inner clearfix">
+					<a class="brand pull-left" href="/">
+						<img src="https://whateley.academy/images/crystalhalllogo12.png" alt="The Whateley Academy Universe" />					</a>
+											<div class="header-search pull-right">
+														
+
+<div class="custom"  >
+	<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9TW6QD0E36"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-9TW6QD0E36');
+</script></div>
+
+
+<div class="custom"  >
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora&display=swap" rel="stylesheet"> </div>
+<ul class="nav menu nav-pills mod-list">
+<li class="item-101 default current active"><a href="/index.php" >Home</a></li><li class="item-139"><a href="/index.php/forum" >Forums</a></li><li class="item-166"><a href="/index.php/recent-releases" >Recent</a></li><li class="item-167"><a href="/index.php/read" >Read</a></li><li class="item-169"><a href="/index.php/gallery" >Gallery</a></li><li class="item-221"><a href="/index.php/map" >Map</a></li><li class="item-170"><a href="https://crystalhall.fandom.com/wiki/Crystal_Hall" target="_blank" rel="noopener noreferrer">Wiki</a></li><li class="item-442"><a href="/index.php/comments" >Comments</a></li></ul>
+						</div>
+									</div>
+			</header>
+							<nav class="navigation" role="navigation">
+														</nav>
+						<!-- Banner -->
+							<div class="banner">
+									</div>
+						<div class="row-fluid">
+				<main id="content" role="main" class="span12">
+					<!-- Begin Content -->
+					<h1 class="page-header">The requested page can't be found.</h1>
+					<div class="well">
+						<div class="row-fluid">
+							<div class="span6">
+								<p><strong>An error has occurred while processing your request.</strong></p>
+								<p>You may not be able to visit this page because of:</p>
+								<ul>
+									<li>an <strong>out-of-date bookmark/favourite</strong></li>
+									<li>a <strong>mistyped address</strong></li>
+									<li>a search engine that has an <strong>out-of-date listing for this site</strong></li>
+									<li>you have <strong>no access</strong> to this page</li>
+								</ul>
+							</div>
+							<div class="span6">
+																	<p><strong>You may wish to search the site or visit the home page.</strong></p>
+									<p>Search this site</p>
+																		<div class="search">
+	<form action="/index.php" method="post" class="form-inline" role="search">
+		<label for="mod-search-searchword0" class="element-invisible">Search ...</label> <input name="searchword" id="mod-search-searchword0" maxlength="200"  class="inputbox search-query input-medium" type="search" placeholder="Search ..." />		<input type="hidden" name="task" value="search" />
+		<input type="hidden" name="option" value="com_search" />
+		<input type="hidden" name="Itemid" value="101" />
+	</form>
+</div>
+																<p>Go to the Home Page</p>
+								<p><a href="/index.php" class="btn"><span class="icon-home" aria-hidden="true"></span> Home Page</a></p>
+							</div>
+						</div>
+						<hr />
+						<p>If difficulties persist, please contact the System Administrator of this site and report the error below.</p>
+						<blockquote>
+							<span class="label label-inverse">404</span> Item not found													</blockquote>
+											</div>
+					<!-- End Content -->
+				</main>
+			</div>
+		</div>
+	</div>
+	<!-- Footer -->
+	<footer class="footer" role="contentinfo">
+		<div class="container-fluid">
+			<hr />
+													<p class="pull-right">
+				<a href="#top" id="back-top">
+					Back to Top				</a>
+			</p>
+			<p>
+				&copy; 2022 The Whateley Academy Universe			</p>
+		</div>
+	</footer>
+			<div class="is_top_left ebdarkmodebtn ebdarkmode-top_left">
+	<div class="toggle eb_btnclr ebdarkmode_button_182 blue" id="darkmode_button">
+		<img src="https://whateley.academy/modules/mod_ebdarkmode/assets/images/eb_darkmoode-6.png">
+	</div>
+</div>
+
+<script type="text/javascript">
+	jQuery( document ).ready(function() {
+		var button_position = "top_left";
+		var clslng = jQuery('body').find('.is_top_left').length;
+	    // console.log(clslng);
+	    if(clslng != 0){
+	    	var sum = 0;
+	    	var ssum = 50;
+	    	jQuery(function(){
+	    		jQuery(".is_top_left").each(function(i){
+	    			if(i == 0){ sum = sum + 15;
+	    			} else { sum += ssum; }
+	    			if(button_position == "bottom_left" || button_position == "bottom_right"){
+	    				jQuery(this).css('bottom', sum+'px');
+	    			}
+	    			if(button_position == "top_left" || button_position == "top_right"){
+	    				jQuery(this).css('top', sum+'px');
+	    			}
+	    			if(button_position == "center_left" || button_position == "center_right"){
+	    				jQuery(this).css('center', sum+'px');
+	    			}
+
+	    		});
+	    	});
+	    }
+	});
+	
+	jQuery( document ).ready(function() {
+		jQuery('.ebdarkmode_button_182').click(function(){
+			jQuery(this).toggleClass('active');
+			jQuery(this).removeClass('de-active');
+			jQuery('body').toggleClass('ebdarkmodecolor');
+
+
+
+			if (jQuery('body').hasClass('ebdarkmodecolor')){		
+
+				setCookie("ebdarkmode", "active", 1);	
+				jQuery(".about-journey").css({ 'background-color' : '', 'color' : '' });
+				jQuery('body').css("background-color",'#031017');
+				jQuery('header').css("background-color",'#031017');
+				jQuery('main').css("background-color",'#031017');
+				jQuery('details').css("background-color",'#031017');
+				jQuery('article').css("background-color",'#031017');
+				jQuery('div').css("background-color",'#031017');
+				jQuery('address').css("background-color",'#031017');
+				jQuery('section').css("background-color",'#031017');
+				jQuery('form').css("background-color",'#031017');
+				jQuery('table,tr,td').css("background-color",'#031017');
+				jQuery('tab,joomla-tab-element').css("background-color",'#031017');
+				jQuery('textarea').css("background-color",'#031017');
+				jQuery('input').css("background-color",'#031017');
+				jQuery('select').css("background-color",'#031017');
+				jQuery('button').css("background-color",'#031017');
+				jQuery('fieldset').css("background-color",'#031017');
+				jQuery('nav').css("background-color",'#031017');
+				jQuery('dl').css("background-color",'#031017');
+				jQuery('dt').css("background-color",'#031017');
+				jQuery('ul').css("background-color",'#031017');
+				jQuery('footer').css("background-color",'#031017');
+				jQuery('h1,h2,h3,h4,h5,h6,p,span').css("background-color",'#031017');
+				jQuery('h1,h2,h3,h4,h5,h6,li,td,th,span,p,div,strong,b,em,small,sub,label,textarea,select,input,button').css("color",'#ffffff');
+				jQuery('a').css("color",'#8aa9ed');
+
+				jQuery(".noebdarkmode").css({ 'background-color' : '', 'color' : '' });
+				jQuery('.noebdarkmode').find('*').each(function(){
+					jQuery(this).css({ 'background-color' : '', 'color' : '' });
+				}).find('*').each(function(){
+					jQuery(this).css({ 'background-color' : '', 'color' : '' });
+				})
+
+
+
+			}else{
+
+				setCookie("ebdarkmode", "de-active", 1);
+				jQuery(this).toggleClass('de-active');
+				jQuery('body').css("background-color",'');
+				jQuery('header').css("background-color",'');
+				jQuery('main').css("background-color",'');
+				jQuery('details').css("background-color",'');
+				jQuery('article').css("background-color",'');
+				jQuery('div').css("background-color",'');
+				jQuery('address').css("background-color",'');
+				jQuery('section').css("background-color",'');
+				jQuery('form').css("background-color",'');
+				jQuery('table,tr,td').css("background-color",'');
+				jQuery('tab,joomla-tab-element').css("background-color",'');
+				jQuery('textarea').css("background-color",'');
+				jQuery('input').css("background-color",'');
+				jQuery('select').css("background-color",'');
+				jQuery('button').css("background-color",'');
+				jQuery('fieldset').css("background-color",'');
+				jQuery('nav').css("background-color",'');
+				jQuery('dl').css("background-color",'');
+				jQuery('dt').css("background-color",'');
+				jQuery('ul').css("background-color",'');
+				jQuery('footer').css("background-color",'');
+				jQuery('h1,h2,h3,h4,h5,h6,p,span').css("background-color",'');
+				jQuery('h1,h2,h3,h4,h5,h6,li,td,th,span,p,div,strong,b,em,small,sub,label,textarea,select,input,button').css("color",'');
+				jQuery('a').css("color",'');
+			}	
+		})	
+	});
+	
+	function setCookie(cname, cvalue, exdays) {
+		var d = new Date();
+		d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+		var expires = "expires="+d.toUTCString();
+		document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+	}	
+
+	function getCookie(cname) {
+		var name = cname + "=";
+		var decodedCookie = decodeURIComponent(document.cookie);
+		var ca = decodedCookie.split(';');
+		for(var i = 0; i <ca.length; i++) {
+		    var c = ca[i];
+		    while (c.charAt(0) == ' ') {
+		      	c = c.substring(1);
+		    }
+		    if (c.indexOf(name) == 0) {
+		      return c.substring(name.length, c.length);
+		    }
+		}
+		return "";
+	}
+	
+</script>
+<script>
+jQuery( document ).ready(function() {
+	var cookie_ebdarkmode = '';
+	// alert(cookie_ebdarkmode);
+	if(cookie_ebdarkmode == 'active'){
+		jQuery('.toggle').toggleClass('active');
+		jQuery('body').toggleClass('ebdarkmodecolor');
+		jQuery(".about-journey").css({ 'background-color' : '', 'color' : '' });
+		jQuery('body').css("background-color",'#031017');
+		jQuery('header').css("background-color",'#031017');
+		jQuery('main').css("background-color",'#031017');
+		jQuery('details').css("background-color",'#031017');
+		jQuery('article').css("background-color",'#031017');
+		jQuery('div').css("background-color",'#031017');
+		jQuery('address').css("background-color",'#031017');
+		jQuery('section').css("background-color",'#031017');
+		jQuery('form').css("background-color",'#031017');
+		jQuery('table,tr,td').css("background-color",'#031017');
+		jQuery('tab,joomla-tab-element').css("background-color",'#031017');
+		jQuery('textarea').css("background-color",'#031017');
+		jQuery('input').css("background-color",'#031017');
+		jQuery('select').css("background-color",'#031017');
+		jQuery('button').css("background-color",'#031017');
+		jQuery('fieldset').css("background-color",'#031017');
+		jQuery('nav').css("background-color",'#031017');
+		jQuery('dl').css("background-color",'#031017');
+		jQuery('dt').css("background-color",'#031017');
+		jQuery('ul').css("background-color",'#031017');
+		jQuery('footer').css("background-color",'#031017');
+		jQuery('h1,h2,h3,h4,h5,h6,p,span').css("background-color",'#031017');
+		jQuery('h1,h2,h3,h4,h5,h6,li,td,th,span,p,div,strong,b,em,small,sub,label,textarea,select,input,button').css("color",'#ffffff');
+		jQuery('a').css("color",'#8aa9ed');
+
+		jQuery(".noebdarkmode").css({ 'background-color' : '', 'color' : '' });
+		jQuery('.noebdarkmode').find('*').each(function(){
+			jQuery(this).css({ 'background-color' : '', 'color' : '' });
+		}).find('*').each(function(){
+			jQuery(this).css({ 'background-color' : '', 'color' : '' });
+		});
+
+	} else if(cookie_ebdarkmode == 'de-active'){
+		jQuery('body').css("background-color",'');
+		jQuery('header').css("background-color",'');
+		jQuery('main').css("background-color",'');
+		jQuery('details').css("background-color",'');
+		jQuery('article').css("background-color",'');
+		jQuery('div').css("background-color",'');
+		jQuery('address').css("background-color",'');
+		jQuery('section').css("background-color",'');
+		jQuery('form').css("background-color",'');
+		jQuery('table,tr,td').css("background-color",'');
+		jQuery('tab,joomla-tab-element').css("background-color",'');
+		jQuery('textarea').css("background-color",'');
+		jQuery('input').css("background-color",'');
+		jQuery('select').css("background-color",'');
+		jQuery('button').css("background-color",'');
+		jQuery('fieldset').css("background-color",'');
+		jQuery('nav').css("background-color",'');
+		jQuery('dl').css("background-color",'');
+		jQuery('dt').css("background-color",'');
+		jQuery('ul').css("background-color",'');
+		jQuery('footer').css("background-color",'');
+		jQuery('h1,h2,h3,h4,h5,h6,p,span').css("background-color",'');
+		jQuery('h1,h2,h3,h4,h5,h6,li,td,th,span,p,div,strong,b,em,small,sub,label,textarea,select,input,button').css("color",'');
+		jQuery('a').css("color",'');
+	}
+	
+});	
+</script>
+
+<script type="text/javascript">
+	jQuery( document ).ready(function() {
+		var auto_time_set = 0;
+		if(auto_time_set == 1){
+			var end_time = "19:00";
+			var start_time = "07:00";
+
+			var startTime = tConvert (start_time);
+			var endTime = tConvert (end_time);
+
+			var curr_time = getval();
+
+			if (get24Hr(curr_time) > get24Hr(startTime) && get24Hr(curr_time) < get24Hr(endTime)) {
+
+		    } else {
+		    	var getCookie_ebdarkmode = getCookie('ebdarkmode');
+				if(getCookie_ebdarkmode == ''){
+					jQuery('.ebdarkmode_button_182').trigger('click');
+				} 
+		    }
+		} 
+	});
+</script>	</body>
+</html>
