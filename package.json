@@ -1,0 +1,14 @@
+{
+  "name": "blog_scraper",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:phoenixeliot/blog_scraper.git",
+  "author": "Phoenix Eliot <phoenixjeliot@gmail.com>",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "commander": "^9.4.1",
+    "node-html-parser": "^6.1.1",
+    "throat": "^6.0.1"
+  }
+}

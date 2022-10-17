@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../../_third_party_tools/node-languagetool-arm64"
+		}
+	],
+	"settings": {
+		"html.format.enable": false
+	}
+}
