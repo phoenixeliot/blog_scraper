@@ -3,8 +3,9 @@ import lt from "node-languagetool";
 import { program } from "commander";
 import fs from "fs";
 import path from "path";
-import throat from 'throat';
-program.option('-o, --out <path>');
+import throat from "throat";
+import changeCase from "change-case";
+program.option("-o, --out <path>");
 program.parse();
 const htmlFilepath = program.args[0];
 const options = program.opts();
@@ -30,69 +31,131 @@ if (!fs.existsSync(lastParagraphFilepath)) {
 let currentParagraph = Number(fs.readFileSync(lastParagraphFilepath));
 
 const root = parse(htmlContent);
+const startInnerHTML = `${root.innerHTML}`;
 
 function writeFinishedHtml() {
   fs.writeFileSync(lastParagraphFilepath, currentParagraph.toString());
-  fs.writeFileSync(outFilepath, root.innerHTML)
+  fs.writeFileSync(outFilepath, root.innerHTML);
   // fs.writeFileSync(outFilepath, htmlContent);
 }
 
 // Save whatever paragraph we were on last if we hit ctrl-c
 let stop = false;
-process.on("SIGINT", () => {
-  stop = true
-  console.log("\n\nSIGINT!\n")
-  try {
-    writeFinishedHtml()
-  } catch(e) {
-    console.log('\n', e)
-  } finally {
-    process.exit(0);
-  }
-});
+// process.on("SIGINT", () => {
+//   stop = true;
+//   console.log("\n\nSIGINT!\n");
+//   try {
+//     writeFinishedHtml();
+//   } catch (e) {
+//     console.log("\n", e);
+//   } finally {
+//     process.exit(0);
+//   }
+// });
 
 const customReplacements = [
-  // ["CUSTOM_MARKS", "™", ""], // fuck unnecessary marks
-  // ["CUSTOM_MARKS", "©", ""],
-  // ["CUSTOM_KIDNAPED", "kidnaped", "kidnapped"],
-  // ["CUSTOM_TANAKAS", "the Tanaka's", "the Tanakas"],
-  // ["CUSTOM_WHATELEY", /Whate?le?y/i, "Whateley"],
+  ["CUSTOM_MARKS", "™", ""], // fuck unnecessary marks
+  ["CUSTOM_MARKS", "©", ""],
+  ["CUSTOM_KIDNAPED", "kidnaped", "kidnapped"],
+  ["CUSTOM_TANAKAS", "the Tanaka's", "the Tanakas"],
+  ["CUSTOM_TANAKAS", "The Tanaka's", "The Tanakas"],
+  ["CUSTOM_WHATELEY", /Whate?le?y/gi, "Whateley"],
+  // slurs because it's super distracting to read as-is
+  ["CUSTOM_SLUR", /she-?males/gi, "trans women"],
+  ["CUSTOM_SLUR", /she-?male/gi, "trans woman"],
+  ["CUSTOM_TRANS", "transgendered males", "trans women"],
+  ["CUSTOM_TRANS", "transgendered male", "trans woman"],
+  ["CUSTOM_TRANS", "transgendered", "transgender"],
+  //  ["CUSTOM_TRANS", "TGs", "trans people"],
+  //  ["CUSTOM_TRANS", "TG", "trans"],
+  //  # typos
+  //  ["collage", "college"],
+  // weird spelling choices
+  ["CUSTOM_SENPAI", "sempai", "senpai"],
+  //  style
+  ["CUSTOM_ALSO", " also.", "."],
+  //  ["©", ""],
+  //  # punctuation
+  ["CUSTOM_PUNCTUATION", " , ", ", "],
+  ["CUSTOM_PUNCTUATION", ",(", ", ("],
+  ["CUSTOM_PUNCTUATION", /\. ?\. ?\.? ?/g, "... "],
+  ["CUSTOM_PUNCTUATION", " . ", ". "],
+  ["CUSTOM_PUNCTUATION", " - ", " — "],
+  ["CUSTOM_PUNCTUATION", " -- ", " — "],
+  ["CUSTOM_PUNCTUATION", " --- ", " — "],
+  //  # one-offs
+  ["CUSTOM_ONE_OFF", "grand parents", "grandparents"],
+  ["CUSTOM_ONE_OFF", "hard ball", "hardball"],
+  ["CUSTOM_ONE_OFF", "the old saw", "the old saying"],
+  ["CUSTOM_ONE_OFF", "striaght", "straight"],
+  ["CUSTOM_ONE_OFF", "don't'", "don't"],
+  ["CUSTOM_ONE_OFF", "just about scarred", "just about scared"],
 ];
 
 function generateCustomMatches(text) {
   let matches = [];
   for (const [ruleId, pattern, replacement] of customReplacements) {
     if (pattern.constructor.name === "RegExp") {
-      const match = text.match(pattern);
-      if (match) {
-        const offset = match.index;
-        const length = match[0].length;
-        if (text.slice(offset, offset + length) === replacement) continue; // it applies no change, so ignore it
-        matches.push({
-          ruleId,
-          offset,
-          length,
-          replacements: [replacement],
-        });
+      const regexMatches = Array.from(text.matchAll(pattern, { global: true }));
+      let continueFrom = 0;
+      if (regexMatches.length > 0) {
+        for (const regexMatch of regexMatches) {
+          const offset = regexMatch.index;
+          if (offset < continueFrom) continue; // Should avoid overlapping matches
+          const original = regexMatch[0];
+          const length = original.length;
+          continueFrom = offset + length;
+          const caseCheckedReplacement = replaceWithCase(original, replacement);
+          if (text.slice(offset, offset + length) === caseCheckedReplacement)
+            continue; // it applies no change, so ignore it
+          matches.push({
+            ruleId,
+            offset,
+            length,
+            replacements: [caseCheckedReplacement],
+          });
+        }
       }
     } else {
-      const index = text.indexOf(pattern);
-      if (index > -1) {
+      let searchFrom = 0;
+      while (text.slice(searchFrom).indexOf(pattern) > -1) {
+        // TODO: Maybe do case logic here too
+        const index = text.slice(searchFrom).indexOf(pattern);
         matches.push({
           ruleId,
-          offset: index,
+          offset: searchFrom + index,
           length: pattern.length,
           replacements: [replacement],
         });
+        searchFrom += index + pattern.length;
       }
     }
   }
   return matches;
 }
 
+function replaceWithCase(string, replacement) {
+  for (const fn of [
+    (s) => s.toUpperCase(),
+    (s) => s.toLowerCase(),
+    changeCase.sentenceCase,
+  ]) {
+    if (fn(string) === string) {
+      if (string !== fn(replacement))
+        console.log(
+          `Replacing "${string}" with "${fn(
+            replacement,
+          )}" (based on "${replacement}")`,
+        );
+      return fn(replacement);
+    }
+  }
+  return replacement;
+}
+
 // Rules I know I want to be applied
 const WHITELIST_RULES = [
-  // "YOUR",
+  "YOUR",
   // "ANY_MORE", // "any more" -> "anymore"
   // "ABOUT_ITS_NN",
   // "IT_IS",
@@ -177,22 +240,35 @@ No period at end of sentence
 // console.dir(await check("Does that mean — Is she wrong?", 'en-US'), {depth: 10})
 // process.exit()
 
+const leaveAlone = [
+  "your testing schedule",
+  "your plumbing",
+  "and your slapping her",
+]
+
 const paragraphs = root.querySelectorAll("p");
 
 async function check(text, language) {
   const customMatches = generateCustomMatches(text);
-  const ltResult = { matches: [] }; //await lt.check(text, language)
+  const ltResult = await lt.check(text, language)
   return { matches: [...customMatches, ...ltResult.matches] };
 }
 
-for (const paragraph of paragraphs.slice(currentParagraph, currentParagraph+400)) {
-  if (stop) break
-  if (paragraph.rawText !== paragraph.innerHTML) {
+for (const paragraph of paragraphs.slice(
+  currentParagraph,
+  // currentParagraph + 400,
+)) {
+  if (stop) break;
+  currentParagraph += 1;
+  if (paragraph.textContent !== paragraph.innerHTML) {
     // We can't handle this yet
-    currentParagraph += 1;
     continue;
   }
-  const text = paragraph.rawText;
+  if (paragraph.textContent.length > 1500) {
+    // We just choke on these sometimes in a way that doesn't get caught. TODO Split these up into sentences instead
+    continue
+  }
+  const text = paragraph.textContent;
   await check(text, "en-US")
     .then((res) => {
       let fixedText = text;
@@ -200,8 +276,8 @@ for (const paragraph of paragraphs.slice(currentParagraph, currentParagraph+400)
       let output = "";
       process.stdout.write(`${currentParagraph}/${paragraphs.length}\r`);
       output += `\nParagraph ${currentParagraph}/${paragraphs.length}`;
+      let continueFrom = 0;
       for (const match of res.matches) {
-        console.log({match})
         if (match.replacements.length === 0) {
           // console.log(text)
           // console.log(match)
@@ -209,6 +285,8 @@ for (const paragraph of paragraphs.slice(currentParagraph, currentParagraph+400)
         }
         const start = match.offset + offset;
         const end = match.offset + offset + match.length;
+        if (start < continueFrom) continue; // Should avoid overlapping matches
+        continueFrom = end;
         const origSubstring = fixedText.substring(start, end);
         const replacement = match.replacements[0];
         if (BLACKLIST_RULES.includes(match.ruleId)) {
@@ -231,15 +309,17 @@ for (const paragraph of paragraphs.slice(currentParagraph, currentParagraph+400)
       if (fixedText != text) {
         output += "\n" + text;
         output += "\n" + fixedText;
+        const orig = paragraph.textContent;
+        paragraph.textContent = fixedText; // maybe use this later instead
       }
       if (output.split("\n").length > 2) console.log(output);
 
-      paragraph.textConent = fixedText // maybe use this later instead
       // htmlContent = htmlContent.replace(text, fixedText);
       // console.log(JSON.stringify(res, null, 2));
     })
-    .catch((e) => console.error(e));
-  currentParagraph += 1;
+    .catch((e) => {
+      console.error(e);
+    });
   // .finally(() => {
   //   console.log("Done!");
   // });
@@ -247,4 +327,5 @@ for (const paragraph of paragraphs.slice(currentParagraph, currentParagraph+400)
 
 lt.kill();
 
-writeFinishedHtml()
+currentParagraph = 0;
+writeFinishedHtml();
