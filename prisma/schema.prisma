@@ -1,0 +1,30 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./spellcheck.db"
+}
+
+model Paragraph {
+  id           Int            @id @default(autoincrement())
+  filename     String
+  index        Int
+  originalText String
+  updatedText  String?
+  RuleInstance RuleInstance[]
+
+  @@unique([filename, index])
+}
+
+model RuleInstance {
+  paragraphId Int       @map("paragraphId")
+  paragraph   Paragraph @relation(fields: [paragraphId], references: [id])
+  ruleId      String
+
+  @@id([paragraphId, ruleId])
+}

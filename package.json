@@ -5,10 +5,14 @@
   "repository": "git@github.com:phoenixeliot/blog_scraper.git",
   "author": "Phoenix Eliot <phoenixjeliot@gmail.com>",
   "license": "MIT",
-  "type": "module",
   "dependencies": {
+    "@prisma/client": "4.4.0",
+    "@types/node": "^18.11.0",
+    "change-case": "^4.1.2",
     "commander": "^9.4.1",
     "node-html-parser": "^6.1.1",
+    "prisma": "^4.4.0",
+    "sqlite": "^4.1.2",
     "throat": "^6.0.1"
   }
 }
