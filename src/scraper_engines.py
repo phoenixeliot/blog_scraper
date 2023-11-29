@@ -1,5 +1,6 @@
 import socket
 import time
+import traceback
 import urllib.request
 import urllib.error
 import ssl
@@ -35,7 +36,8 @@ class FetchScraper:
                 result["html"] = response.content
             return result
         except Exception as ex:
-            print("Couldn't scrape URL " + url, ex)
+            print("Couldn't scrape URL " + url)
+            traceback.print_exc()
             raise ex
 
 
@@ -54,31 +56,51 @@ class SeleniumScraper:
         try:
             self.driver.quit()
         except Exception as e:
-            print("Failed to quit Selenium:", e)
-            pass
+            print("Failed to quit Selenium:")
+            traceback.print_exc()
 
     def scrape(self, url, wait_for_selector=None, js=None):
         print(f"Fetching with Selenium: {url}")
-        self.driver.get(url)
-        # TODO: Modularize this; this is specific to Agenty Duck
-        if wait_for_selector:
+        max_attempts = 100
+        attempt = 0
+        while attempt < max_attempts:
             try:
-                WebDriverWait(self.driver, 5).until(
-                    expected_conditions.presence_of_element_located(
-                        (By.CSS_SELECTOR, wait_for_selector)
+                attempt += 1
+                self.driver.get(url)
+                if ("The requested page can't be found." in self.driver.page_source.strip()):
+                    return dict(
+                        html='',
+                        final_url=self.driver.current_url,
+                        response=None
                     )
+                # TODO: Modularize this; this is specific to Agenty Duck
+                if wait_for_selector:
+                    try:
+                        WebDriverWait(self.driver, 30).until(
+                            expected_conditions.presence_of_element_located(
+                                (By.CSS_SELECTOR, wait_for_selector)
+                            )
+                        )
+                    except selenium.common.exceptions.TimeoutException as e:
+                        print(
+                            f"WARNING: TimeoutException while trying to load URL: {url}. Selector was never found: {wait_for_selector}"
+                        )
+                        raise e
+                if js:
+                    self.driver.execute_script(js)
+                    time.sleep(5)
+                html = self.driver.page_source.encode("utf-8").strip()
+                return dict(
+                    html=html,
+                    final_url=self.driver.current_url,
+                    response=None,  # Selenium basically can't scrape images, so we never need the content-type from it
                 )
-            except selenium.common.exceptions.TimeoutException as e:
-                pass
-                print(
-                    f"WARNING: TimeoutException while trying to load URL: {url}. Selector was never found: {wait_for_selector}"
-                )
-        if js:
-            self.driver.execute_script(js)
-            time.sleep(5)
-        html = self.driver.page_source.encode("utf-8").strip()
-        return dict(
-            html=html,
-            final_url=self.driver.current_url,
-            response=None,  # Selenium basically can't scrape images, so we never need the content-type from it
-        )
+            except Exception as e:
+                if (attempt < max_attempts):
+                    print(f"Exception while scraping, attempt #{attempt}")
+                    traceback.print_exc()
+                    time.sleep(attempt)
+                else:
+                    print("Exception while scraping, final attempt: ", e)
+                    raise e
+                

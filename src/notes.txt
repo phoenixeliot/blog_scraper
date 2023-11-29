@@ -151,3 +151,33 @@ uritools
 pyyaml
 bs4
 lxml
+
+
+2022-09-22
+To run it this time I had to do some stupid path bullshit because virtualenv eats the path and breaks the `.bin` one:
+PATH="$HOME/.bin:$PATH" python ./src/scrape.py "whateley_academy_original_timeline.yml" --format=epub,mobi
+
+
+pipeline for the redesign
+- choose a mode (TOC, or sequential)
+- navigate to a starting page with the browser
+  - does this need to be a browser extension? can electron do this safely?
+- use element picker tool like ublock's to pick elements for things like the TOC list, etc
+  - can just make user use the dev tools for MVP and put the result in a text field
+- auto navigate to the first page (if in TOC mode)
+- use element picker tool to pick title, body content, things to strip out, etc
+- on the side, generate a preview of what will be scraped as various settings are selected. Rerun this whenever something changes, using just the current page to start
+
+resumability / editability
+- if you need to make changes, you should be able to load up the generated config file and go to the TOC or any specific chapter page to tweak settings
+- original source page downloads should be cached by default with the option to re-scrape them
+
+editing
+- you should be able to click-drag on some text to add a find-replace rule for it
+  - include some common typo defaults from worm/whateley
+  - show all locations that the edit was made with enough context to know if it was bad or not
+
+
+Check out WebToEpub for inspiration: 
+    https://chrome.google.com/webstore/detail/webtoepub/akiljllkbielkidmammnifcnibaigelm
+    https://github.com/dteviot/WebToEpub

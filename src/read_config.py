@@ -28,6 +28,13 @@ def read_config(filename):
     except (ModuleNotFoundError, AttributeError):
         config["rewrite_post"] = noop
 
+    # try:
+    #     config["text_replace"] = importlib.import_module(
+    #         config_py_path, "text_replace"
+    #     ).text_replace
+    # except (ModuleNotFoundError, AttributeError):
+    #     config["text_replace"] = noop
+
     try:
         config["rewrite_toc"] = importlib.import_module(
             config_py_path, "rewrite_toc"

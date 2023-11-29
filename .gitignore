@@ -1,6 +1,7 @@
 .DS_Store
 .idea
 venv
+venv.bak
 src/__pycache__
 tmp
 logs
@@ -8,3 +9,5 @@ __pycache__
 cache
 *.log
 .vscode/.ropeproject
+node_modules
+prisma/spellcheck.db

@@ -2,10 +2,8 @@
 
 This converts blogs into ebooks, by scraping them with Selenium.
 
-
-[Please support the author!](http://parahumans.wordpress.com/donate/)
-
-![Worm Header](http://parahumans.files.wordpress.com/2011/06/cityscape2.jpg)
+# Author credits (incomplete)
+Wildbow: [Please support the author!](http://parahumans.wordpress.com/donate/)
 
 ## Download
 

@@ -12,6 +12,7 @@ import shutil
 import sys
 import os
 import re
+import traceback
 from typing import Any
 import urllib.error
 import ssl
@@ -19,6 +20,7 @@ from collections import defaultdict
 from pathlib import Path
 from urllib.parse import urlparse
 import requests
+from time import sleep
 
 import uritools
 from bs4 import BeautifulSoup
@@ -37,7 +39,7 @@ from src.scraper_engines import SeleniumScraper, FetchScraper
 import argparse
 
 DEBUG = False
-DEBUG_POST_LIMIT = 15
+DEBUG_POST_LIMIT = 2
 
 """
 Parse command line arguments to fetch the config data
@@ -103,6 +105,7 @@ image_folder = args.config_filename.replace(".yml", "")
 
 
 def get_redirect(url):
+    # return url #nocommit
     # simple case: it's already in the dict
     url = absolute_from_relative_url(url)
     if url in redirects:
@@ -302,16 +305,22 @@ if config["crawl_mode"] == "toc":
     Scrape all the pages that the TOC links to (using multithreading, yay!)
     """
 
+    def scrape_and_log(i, url):
+        if config['slow_mode_seconds']:
+            sleep(config['slow_mode_seconds'])
+        print(f"Scraping page {i+1}/{len(toc_links)}")
+        return scrape_html(url)
+
     # scraped_toc_links = multi_scrape_toc_links(toc_links, max_threads, absolute_from_relative_url, config, scraper)
     scraped_toc_links = list(
         filter(
             lambda x: x is not None,
             map(
-                scrape_html,
-                map(
+                lambda pair: scrape_and_log(pair[0], pair[1]),
+                enumerate(map(
                     lambda l: absolute_from_relative_url(l["tag"]["href"]),
                     toc_links,
-                ),
+                )),
             ),
         )
     )
@@ -369,8 +378,7 @@ if config["crawl_mode"] == "toc":
             posts.append(parsed_post)
         except Exception as e:
             print("Error scraping link:", link["final_url"])
-            print(e)
-            pass
+            traceback.print_exc()
         # TODO: Maybe catch exception for trying to read off-site pages
         #   Also why is it scraping off-site pages anyway?
 
@@ -700,7 +708,7 @@ replace hrefs in TOC to use new ids
 
 for link in toc_links:
     tag = link["tag"]
-    tag["href"] = "#" + final_url_to_id[get_redirect(tag["href"])]
+    tag["href"] = "#" + final_url_to_id.get(get_redirect(tag["href"]), tag["href"])
 
 """
 replace hrefs from links in posts to use new ids
@@ -906,6 +914,8 @@ for post in posts:
     book_html += str(post["title_soup"])
     for body_soup in post["body_soups"]:
         book_html += str(body_soup)
+
+# book_html = config["text_replace"](book_html)
 
 book_html = f"""
 <html lang="en-US">
