@@ -29,7 +29,7 @@ def convert_ebook(config, book_base_name, output_format):
         "--page-breaks-before",
         "//*[name()='h1']", # default is "//*[name()='h1' or name()='h2']"
         "--max-toc-links",
-        "194",
+        "2000",
         "--cover",
         f'{os.path.join(os.path.dirname(__file__), "blank_cover_1x1.png")}',
     ]
