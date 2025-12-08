@@ -1,0 +1,15 @@
+book_title: 'Claw'
+book_author: 'Wildbow'
+crawl_mode: 'incremental' # The TOC is a little broken
+scraper_engine: 'selenium' # wordpress does things like replace anything with "@" with "[email filtered]" unless we use selenium
+first_post_url: 'https://clawwebserial.blog/2024/03/09/the-point-1-1/'
+post_url_pattern: '.*/\d+/\d+/\d+/.+'
+post_title_selector: '.entry-title'
+post_body_selector: '.entry-content'
+scrape_images: true
+blacklist_selector: '.sharedaddy'
+external_link_symbol: '↗︎︎'
+blacklist_texts:
+  - 'Next Chapter'
+  - 'Last Chapter'
+  - 'Previous Chapter' # Yes, it uses both, hah
