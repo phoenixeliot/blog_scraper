@@ -569,6 +569,86 @@ elif config["crawl_mode"] == "incremental":
     for (chapter_index, post) in enumerate(posts):
         final_url_to_id[post["final_url"]] = "chap" + str(chapter_index + 1)
 
+elif config["crawl_mode"] == 'manual':
+    base_url = config["manual_toc_urls"][0]
+    """
+    Scrape all the pages given in the config
+    """
+    def scrape_and_log(i, url):
+        if config['slow_mode_seconds']:
+            sleep(config['slow_mode_seconds'])
+        print(f"Scraping page {i+1}/{len(config['manual_toc_urls'])}")
+        return scrape_html(url)
+
+    # scraped_toc_links = multi_scrape_toc_links(toc_links, max_threads, absolute_from_relative_url, config, scraper)
+    scraped_toc_links = list(
+        filter(
+            lambda x: x is not None,
+            map(
+                lambda pair: scrape_and_log(pair[0], pair[1]),
+                enumerate(config["manual_toc_urls"]),
+            ),
+        )
+    )
+    # with multiprocessing.Pool(max(1, min(len(toc_links), max_threads))) as thread_pool:
+    #     scraped_toc_links = list(
+    #         filter(
+    #             lambda x: x is not None,
+    #             thread_pool.starmap(
+    #                 multi_scrape_html,
+    #                 map(
+    #                     lambda l: (absolute_from_relative_url(l["tag"]["href"]), config, scraper),
+    #                     toc_links,
+    #                 ),
+    #             ),
+    #         )
+    #     )
+
+    # Record the TOC pages into included_scraped_urls
+    for link in scraped_toc_links:
+        mark_url_included(link["final_url"])
+
+    """
+    for each scraped_link, add [href -> final_url] to the pile o' redirects
+    """
+    for link in scraped_toc_links:
+        if link["href"] != link["final_url"]:
+            print(f"Redirected from {link['href']} to {link['final_url']}")
+        redirects[link["href"]] = link["final_url"]
+
+    """
+    map the final urls to chapter numbers
+    """
+    final_url_to_id = {}
+    for (chapter_index, link) in enumerate(scraped_toc_links):
+        final_url_to_id[link["final_url"]] = "chap" + str(chapter_index + 1)
+
+    # TODO: Flesh this out to handle all the cases
+    # def final_url_to_hash_id(url):
+    #     if url == config['toc_url']:
+    #         return toc_element['id']
+    #     return # TODO chapter ids, subsection ids
+
+    """
+    assemble the posts (with metadata)
+    eg dict(final_url=..., title_soup=..., body_soups=)
+
+    for each scraped link, parse its content and extract the title/body
+    """
+    posts = []
+    for link in scraped_toc_links:
+        try:
+            print(f"Parsing post: {link['final_url']}")
+            parsed_post = parse_post(link["html"])
+            parsed_post["final_url"] = link["final_url"]
+            posts.append(parsed_post)
+        except Exception as e:
+            print("Error scraping link:", link["final_url"])
+            traceback.print_exc()
+        # TODO: Maybe catch exception for trying to read off-site pages
+        #   Also why is it scraping off-site pages anyway?
+
+
 else:
     raise Exception("Crawl mode must be either 'toc' or 'incremental'")
 
@@ -901,7 +981,7 @@ else:
         toc_result_html = '<h1 id="toc">Table of Contents</h1>' + "<br>".join(
             map(lambda link: str(link["tag"]), toc_links)
         )
-    elif config["crawl_mode"] == "incremental":
+    elif config["crawl_mode"] == "incremental" or config["crawl_mode"] == "manual":
 
         def toc_link_from_post(post):
             return f"<a href=\"#{final_url_to_id[post['final_url']]}\">{post['title_soup'].text}</a>"

@@ -1,0 +1,62 @@
+book_title: 'Kabbalah and the Counting of the Omer'
+book_author: 'Barry Leff'
+crawl_mode: 'manual'
+manual_toc_urls:
+  - https://neshamah.net/2015/04/kabbalah-counting-omer.html
+  - https://neshamah.net/2015/04/counting-omer-day-one.html
+  - https://neshamah.net/2015/04/counting-gevurah-chesed.html
+  - https://neshamah.net/2015/04/counting-tiferet-chesed.html
+  - https://neshamah.net/2015/04/counting-netzach-chesed.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-five-hod-of-chesed.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-six-yesod-of-chesed.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-seven-malchut-of-chesed.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-eight-chesed-of-gevurah.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-nine-gevurah-of-gevurah.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-ten-tiferet-of-gevurah.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-eleven-netzach-of-gevurah.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-12-hod-of-gevurah.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-13-yesod-of-gevurah.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-14-malchut-of-gevurah.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-15-chesed-of-tiferet.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-16-gevurah-of-tiferet.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-17-tiferet-of-tiferet.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-18-netzach-of-tiferet.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-19-hod-of-tiferet.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-20-yesod-of-tiferet.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-21-malchut-of-tiferet.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-22-chesed-of-netzach.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-23-gevurah-of-netzach.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-24-tiferet-of-netzach.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-25-netzach-of-netzach.html
+  - https://neshamah.net/2015/04/counting-the-omer-day-26-hod-of-netzach.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-27-yesod-of-netzach.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-31-tiferet-of-hod.html
+  - https://neshamah.net/2015/05/counting-omer-day-32-netzach-hod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-33-hod-of-hod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-34-yesod-of-hod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-35-malchut-of-hod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-36-chesed-of-yesod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-37-gevurah-of-yesod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-38-tiferet-of-yesod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-39-netzach-of-yesod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-40-hod-of-yesod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-41-yesod-of-yesod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-42-malchut-of-yesod.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-43-chesed-of-malchut.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-44-gevurah-of-malchut.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-45-tiferet-of-malchut.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-46-netzach-of-malchut.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-47-hod-of-malchut.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-48-yesod-of-malchut.html
+  - https://neshamah.net/2015/05/counting-the-omer-day-49-malchut-of-malchut.html
+scraper_engine: 'selenium' # wordpress does things like replace anything with "@" with "[email filtered]" unless we use selenium
+post_url_pattern: '.*/\d+/\d+/.+'
+post_title_selector: '.cm-entry-title'
+post_body_selector: '.cm-entry-summary'
+scrape_images: true
+# blacklist_selector: '.sharedaddy'
+external_link_symbol: '↗︎︎'
+next_link_selector: "a[rel=next]"
+blacklist_texts:
+  - 'Next Chapter'
+  - 'Last Chapter'
